@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expense Tracker</title>
+<meta name="theme-color" content="#16A34A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1>Expenses</h1>
+  <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">&#9881;</button>
+</header>
+
+<div class="card">
+  <div class="type-toggle">
+    <button type="button" data-type="Expense" class="active">Expense</button>
+    <button type="button" data-type="Income">Income</button>
+  </div>
+
+  <label for="category">Category</label>
+  <select id="category"></select>
+
+  <label for="amount">Amount</label>
+  <div class="amount-row">
+    <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+  </div>
+
+  <label for="description">Description (optional)</label>
+  <input id="description" type="text" placeholder="e.g. Auto rickshaw">
+
+  <label for="date">Date</label>
+  <input id="date" type="date">
+
+  <button class="primary" id="saveBtn">Save</button>
+</div>
+
+<div class="card">
+  <div class="sync-bar">
+    <div class="pending-count">Pending sync: <b id="pendingCount">0</b></div>
+    <button class="secondary" id="refreshCatBtn" style="width:auto;padding:8px 12px;font-size:13px;">Refresh categories</button>
+  </div>
+  <button class="secondary" id="syncBtn">Sync now</button>
+</div>
+
+<div class="card">
+  <ul class="entry-list" id="entryList"></ul>
+  <div class="empty" id="emptyState" style="display:none;">No entries yet. Add your first one above.</div>
+</div>
+
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <label for="webAppUrl">Apps Script Web App URL</label>
+    <input id="webAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    <label for="secret">Secret</label>
+    <input id="secret" type="password" placeholder="Shared secret from Script Properties">
+    <div class="hint">Both are stored only on this phone (localStorage) — never in the app's source code.</div>
+    <button class="primary row-gap" id="saveSettingsBtn">Save</button>
+    <button class="secondary row-gap" id="closeSettingsBtn">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
