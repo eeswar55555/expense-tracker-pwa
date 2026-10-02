@@ -1,0 +1,80 @@
+/* Setup tab (categories, income sources, groups, recurring rules) and the
+   due-recurring review sheet. */
+
+/* ------------------------------------------------------------- entity rows */
+
+.setup-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.setup-row:last-of-type { border-bottom: none; }
+.setup-row-main {
+  flex: 1; min-width: 0; background: none; border: none; text-align: left;
+  padding: 10px 2px; display: flex; flex-direction: column; gap: 2px;
+  min-height: 44px; justify-content: center;
+}
+.setup-row-name { font-weight: 600; }
+.setup-row-meta { font-size: 12.5px; color: var(--muted); }
+.setup-row-actions { display: flex; flex-direction: row; gap: 6px; flex: none; }
+.row-move {
+  min-width: 40px; min-height: 44px; border: 1px solid var(--border); background: var(--card);
+  border-radius: 8px; color: var(--text-2); font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.row-move:disabled { opacity: .35; }
+
+.setup-total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 14px; font-weight: 700; padding: 10px 2px 2px; border-top: 1px solid var(--border); margin-top: 4px;
+}
+.setup-total strong { color: var(--text); }
+
+.setup-footer-hint { text-align: center; padding: 0 8px 4px; }
+
+/* ----------------------------------------------------------------- groups */
+
+.groups-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ------------------------------------------------------------- recurring */
+
+.due-banner {
+  display: block; width: 100%; text-align: left; min-height: 44px;
+  background: var(--amber-soft); border: 1px solid var(--amber); color: var(--warn);
+  font-weight: 700; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+}
+
+.rule-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+  margin-bottom: 10px; background: var(--card-2);
+}
+.rule-card-main { flex: 1; min-width: 0; background: none; border: none; text-align: left; padding: 0; display: block; }
+.rule-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; margin-bottom: 4px; }
+.rule-card-line { font-size: 12.5px; margin-top: 2px; }
+.rule-warn { color: var(--bad); font-size: 12.5px; margin-top: 4px; font-weight: 700; }
+.rule-card .switch { margin-top: 2px; }
+
+.rule-preview { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--text-2); margin-top: 14px; }
+
+/* ----------------------------------------------------------- toggle switch */
+
+.switch { position: relative; display: inline-flex; align-items: center; width: 46px; height: 28px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; cursor: pointer; }
+.switch-track { position: absolute; inset: 0; background: var(--border); border-radius: 999px; transition: background .15s; pointer-events: none; }
+.switch-track::before {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--card); box-shadow: var(--shadow); transition: transform .15s;
+}
+.switch input:checked + .switch-track { background: var(--ink); }
+.switch input:checked + .switch-track::before { transform: translateX(18px); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.switch-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 6px; font-size: 13px; color: var(--text-2); font-weight: 600; }
+
+/* --------------------------------------------------------- due review sheet */
+
+.due-list { max-height: 48vh; overflow-y: auto; margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; }
+.due-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); min-height: 44px; }
+.due-row:last-child { border-bottom: none; }
+.due-row input[type="checkbox"] { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--ink); flex: none; }
+.due-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.due-row-top { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.due-row-sub { font-size: 12.5px; }
+.due-total { font-weight: 700; text-align: right; padding: 8px 4px; }

@@ -1,72 +1,76 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Expense Tracker</title>
-<meta name="theme-color" content="#16A34A">
+<meta name="theme-color" content="#faf6f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15161d" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/entry.css">
+<link rel="stylesheet" href="css/history.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/setup.css">
 </head>
 <body>
 
-<header>
-  <h1>Expenses</h1>
-  <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">&#9881;</button>
+<header class="app-header">
+  <h1 id="viewTitle">Add</h1>
+  <button class="sync-pill" id="syncPill" type="button" aria-label="Sync now">
+    <span class="dot" aria-hidden="true"></span><span id="syncLabel">Synced</span>
+  </button>
+  <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
 </header>
 
-<div class="card">
-  <div class="type-toggle">
-    <button type="button" data-type="Expense" class="active">Expense</button>
-    <button type="button" data-type="Income">Income</button>
+<main>
+  <section class="view" id="view-add" aria-labelledby="viewTitle"></section>
+  <section class="view" id="view-history" aria-labelledby="viewTitle"></section>
+  <section class="view" id="view-dashboard" aria-labelledby="viewTitle"></section>
+  <section class="view" id="view-setup" aria-labelledby="viewTitle"></section>
+</main>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="tabbar-inner" role="tablist">
+    <button type="button" role="tab" data-tab="add" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add
+    </button>
+    <button type="button" role="tab" data-tab="history" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>History
+    </button>
+    <button type="button" role="tab" data-tab="dashboard" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Dashboard
+    </button>
+    <button type="button" role="tab" data-tab="setup" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Setup
+    </button>
   </div>
+</nav>
 
-  <label for="category">Category</label>
-  <select id="category"></select>
-
-  <label for="amount">Amount</label>
-  <div class="amount-row">
-    <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
-  </div>
-
-  <label for="description">Description (optional)</label>
-  <input id="description" type="text" placeholder="e.g. Auto rickshaw">
-
-  <label for="date">Date</label>
-  <input id="date" type="date">
-
-  <button class="primary" id="saveBtn">Save</button>
-</div>
-
-<div class="card">
-  <div class="sync-bar">
-    <div class="pending-count">Pending sync: <b id="pendingCount">0</b></div>
-    <button class="secondary" id="refreshCatBtn" style="width:auto;padding:8px 12px;font-size:13px;">Refresh categories</button>
-  </div>
-  <button class="secondary" id="syncBtn">Sync now</button>
-</div>
-
-<div class="card">
-  <ul class="entry-list" id="entryList"></ul>
-  <div class="empty" id="emptyState" style="display:none;">No entries yet. Add your first one above.</div>
-</div>
-
-<div class="modal-backdrop" id="settingsModal">
-  <div class="modal">
-    <h2>Settings</h2>
+<div class="sheet-backdrop" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="settingsTitle">Settings</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Close">&#x2715;</button>
+    </div>
     <label for="webAppUrl">Apps Script Web App URL</label>
-    <input id="webAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    <input id="webAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
     <label for="secret">Secret</label>
-    <input id="secret" type="password" placeholder="Shared secret from Script Properties">
-    <div class="hint">Both are stored only on this phone (localStorage) — never in the app's source code.</div>
-    <button class="primary row-gap" id="saveSettingsBtn">Save</button>
-    <button class="secondary row-gap" id="closeSettingsBtn">Close</button>
+    <input id="secret" type="password" placeholder="PHONE_API_SECRET from Script Properties" autocomplete="off">
+    <div class="hint">Both are stored only on this phone — never in the app's source code.</div>
+    <div class="hint" id="lastSyncInfo"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" type="button" data-close>Cancel</button>
+      <button class="btn btn-primary" type="button" id="saveSettingsBtn">Save &amp; sync</button>
+    </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="app.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

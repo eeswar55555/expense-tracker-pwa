@@ -1,0 +1,52 @@
+/* Add view + shared entry-field styling (also used inside the entry-editor sheet). */
+
+/* -------------------------------------------------------- shared field bits */
+
+.date-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; position: relative; }
+.date-row .chip { flex: none; }
+.date-btn { font-weight: 700; }
+#ef-date-input,
+.add-date-input {
+  position: absolute; inset: 0; width: 1px; height: 1px;
+  opacity: 0; pointer-events: none; border: none; padding: 0; margin: 0; min-height: 0;
+}
+
+.confirm-row { text-align: center; margin-bottom: 4px; }
+.confirm-msg { color: var(--bad); font-weight: 600; font-size: 14px; }
+
+/* ------------------------------------------------------------------ Add tab */
+
+.due-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--amber-soft); border: 1px solid var(--amber);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px;
+  font-size: 14px; font-weight: 600;
+}
+.due-banner button {
+  background: none; border: none; color: var(--ink); font-weight: 700;
+  text-decoration: underline; min-height: 32px; padding: 0;
+}
+
+.month-strip { display: flex; gap: 10px; }
+.month-strip .tile {
+  flex: 1; background: var(--card-2); border-radius: 12px; padding: 12px; text-align: center;
+}
+.month-strip .tile .n { font-size: 17px; font-weight: 800; }
+.month-strip .tile .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.month-strip .tile .of-budget { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.recent-list { display: flex; flex-direction: column; }
+.recent-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 2px; border-top: 1px solid var(--border);
+  width: 100%; background: none; border-left: none; border-right: none; border-bottom: none;
+  text-align: left; min-height: 44px;
+}
+.recent-row:first-child { border-top: none; }
+.recent-row .meta { flex: 1; min-width: 0; }
+.recent-row .cat { font-weight: 600; font-size: 14px; }
+.recent-row .desc { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-row .amt { font-weight: 700; font-size: 14.5px; white-space: nowrap; }
+.recent-row .date { font-size: 11px; color: var(--muted); }
+
+.see-all { font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: none; padding: 4px; min-height: 32px; }

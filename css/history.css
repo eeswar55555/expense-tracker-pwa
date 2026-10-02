@@ -1,0 +1,43 @@
+/* History tab styling. */
+
+.hist-filters { display: flex; flex-direction: column; gap: 10px; }
+
+.month-nav { display: flex; align-items: center; gap: 8px; }
+.month-nav .month-label { flex: 1; text-align: center; font-weight: 700; }
+.month-nav .icon-btn { border: 1px solid var(--border); border-radius: 10px; }
+.month-nav #histAllTime[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+
+.hist-row-filters { gap: 8px; }
+
+.hist-totals { padding: 12px 16px; }
+.totals-row { display: flex; }
+.t-item { flex: 1; text-align: center; }
+.t-lbl { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.t-val { font-size: 15px; font-weight: 800; }
+
+.day-group { margin-bottom: 14px; }
+.day-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0 4px 8px; font-size: 13px; font-weight: 700; color: var(--text-2);
+}
+.day-head .day-total { color: var(--expense); font-weight: 700; }
+
+.hist-card { padding: 4px 12px; }
+.hist-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: none; border: none; border-top: 1px solid var(--border);
+  padding: 12px 2px; text-align: left; min-height: 44px;
+}
+.hist-row:first-child { border-top: none; }
+.hist-row .meta { flex: 1; min-width: 0; }
+.hist-row .cat-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hist-row .cat { font-weight: 600; font-size: 14px; }
+.hist-row .desc { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.hist-row .amt { font-weight: 700; font-size: 14.5px; white-space: nowrap; }
+
+.status-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.status-badge.status-pending { background: var(--amber-soft); color: var(--warn); }
+.status-badge.status-error { background: var(--expense-soft); color: var(--bad); }
+
+#histShowMore { margin-top: 4px; }
+#histShowMore[hidden] { display: none; } /* .btn sets display:inline-flex, which otherwise beats the UA [hidden] rule */

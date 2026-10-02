@@ -1,12 +1,33 @@
-const CACHE = 'expense-tracker-v1';
+// Offline app shell. Network-first (with a short timeout) for our own files, so a
+// new version pushed to GitHub Pages shows up on the next open while online,
+// falling back to the cache when offline. Cross-origin calls (the Apps Script
+// sync endpoint) are never intercepted or cached.
+
+const CACHE = 'expense-tracker-v2';
 const SHELL = [
   './',
   './index.html',
-  './app.js',
   './styles.css',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './css/entry.css',
+  './css/history.css',
+  './css/dashboard.css',
+  './css/setup.css',
+  './js/app.js',
+  './js/util.js',
+  './js/store.js',
+  './js/sync.js',
+  './js/recurring.js',
+  './js/analytics.js',
+  './js/charts.js',
+  './js/views/add.js',
+  './js/views/history.js',
+  './js/views/dashboard.js',
+  './js/views/setup.js',
+  './js/views/entry-form.js',
+  './js/views/due.js',
 ];
 
 self.addEventListener('install', (event) => {
@@ -25,23 +46,22 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  if (req.method !== 'GET') return;
   const url = new URL(req.url);
-
-  // Only ever cache our own app-shell files. Everything else (the Apps
-  // Script sync/category calls, which go to a different origin) hits the
-  // network directly and is never cached.
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((res) => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy));
-        }
-        return res;
-      }).catch(() => cached);
-    })
-  );
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      const res = await Promise.race([
+        fetch(req),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500)),
+      ]);
+      if (res.ok) cache.put(req, res.clone());
+      return res;
+    } catch {
+      return (await cache.match(req, { ignoreSearch: true })) ||
+             (req.mode === 'navigate' ? cache.match('./index.html') : Response.error());
+    }
+  })());
 });
