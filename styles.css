@@ -166,6 +166,7 @@ html {
   font-family: var(--font);
   font-size: 15px;
   -webkit-tap-highlight-color: transparent;
+  overflow-wrap: anywhere;       /* a long unbroken name wraps instead of widening its row (and the page) */
 }
 body { margin: 0; padding: 0; min-height: 100vh; }
 /* the style's page paint: one fixed layer, painted once (never repainted while scrolling) */

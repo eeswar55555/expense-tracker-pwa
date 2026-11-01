@@ -21,8 +21,9 @@
 // by what the sheet holds, except entries changed on the phone while the request
 // was in flight (or whose op failed) — those stay dirty for the next sync.
 
-import { getKV, setKV, getSetup, emitChange, rawDB, reapplyPending, snapshotUnsynced, listEntries } from './store.js';
+import { getKV, setKV, getSetup, emitChange, rawDB, reapplyPending, snapshotUnsynced, listEntries, DEFAULT_SETUP } from './store.js';
 import { validateCloudReply, summarizeCloud, unsyncedTokens } from './cloud.js';
+import { rebaseOntoSheet, setupKeys } from './setup-rebase.js';
 
 const LS = { url: 'etk.webAppUrl', secret: 'etk.secret' };
 
@@ -56,18 +57,23 @@ async function callSheet(cfg, payload) {
   // answer the OPTIONS preflight that application/json would trigger.
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60000);
-  let data;
+  let res, data;
   try {
-    const res = await fetch(cfg.webAppUrl, {
+    res = await fetch(cfg.webAppUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ secret: cfg.secret, action: 'sync', ...payload }),
       signal: ctrl.signal,
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    data = await res.json();
+    if (!res.ok) throw new Error(`The sheet answered with an error (HTTP ${res.status}) — check the Web App URL in Settings.`);
+    try { data = await res.json(); }
+    catch (err) {
+      if (err.name === 'AbortError') throw err;
+      throw new Error('The sheet did not answer with data — is the Web App deployed with access “Anyone”?');
+    }
   } catch (err) {
-    throw new Error(err.name === 'AbortError' ? 'Sync timed out — try again.' : 'Could not reach the sheet (offline?).');
+    if (err.name === 'AbortError') throw new Error('Sync timed out — try again.');
+    throw res ? err : new Error('Could not reach the sheet (offline?).');
   } finally {
     clearTimeout(timer);
   }
@@ -81,9 +87,10 @@ async function doSync() {
   if (!cfg.webAppUrl || !cfg.secret) throw new Error(NOT_CONNECTED);
 
   const db = await rawDB();
+  await rebaseNeverPulledSetup(cfg, db);
   const all = await getAllRaw(db);
   const dirty = all.filter((e) => e.dirty);
-  const snapshot = new Map(dirty.map((e) => [e.id, e.updatedAt]));
+  const sent = new Map(dirty.map((e) => [e.id, e]));
   const ops = dirty.map((e) => e.deleted
     ? { op: 'delete', id: e.id }
     : { op: 'upsert', id: e.id, type: e.type, date: e.date, category: e.category, amount: e.amount, description: e.description || '' });
@@ -95,29 +102,32 @@ async function doSync() {
   const setupBase = setup ? (await getKV('setupBase')) || null : null;
 
   const data = await callSheet(cfg, { ops, setup, renames: setupMeta.renames || [], setupBase, watermarks, skips });
+  const { rows } = validateCloudReply(data);       // nothing below runs on a reply this app can't read
 
   const results = new Map((data.results || []).map((r) => [r.id, r]));
+  const onSheet = new Set(rows.map((r) => r.id));
 
   // Rebuild the cache from the sheet, preserving anything still dirty. Read and
   // replace happen in ONE transaction so an edit can't slip in between.
   const { failed, pulled } = await rewriteEntries(db, (fresh) => {
     let failed = 0;
     const keep = new Map();
-    for (const e of fresh) {
-      if (!e.dirty) continue;
+    for (const e0 of fresh) {
+      if (!e0.dirty) continue;
+      const e = onSheet.has(e0.id) ? { ...e0, serverKnown: true } : e0;
       const r = results.get(e.id);
-      if (!snapshot.has(e.id) || snapshot.get(e.id) !== e.updatedAt) { keep.set(e.id, e); continue; } // edited mid-sync
+      if (!sent.has(e.id) || sent.get(e.id).updatedAt !== e.updatedAt) { keep.set(e.id, e); continue; } // edited mid-sync
       if (r && r.status === 'error') { keep.set(e.id, { ...e, syncError: r.message || 'rejected' }); failed++; continue; }
       if (!r) { keep.set(e.id, e); failed++; }                                                          // no answer: retry
       // ok -> drop; the sheet's copy (below) replaces it
     }
-    const next = [];
-    for (const type of ['Expense', 'Income']) {
-      for (const row of data.ledger[type] || []) {
-        if (keep.has(row.id)) continue;
-        next.push({ id: row.id, type, date: row.date, category: row.category, amount: Number(row.amount), description: row.description || '', updatedAt: 0, dirty: false, deleted: false, serverKnown: true });
-      }
+    // A new entry this request carried, then deleted (or its Save undone) before the reply came:
+    // the sheet has it now, so it needs a delete next time rather than coming back.
+    const here = new Set(fresh.map((e) => e.id));
+    for (const [id, e] of sent) {
+      if (!here.has(id) && onSheet.has(id)) keep.set(id, { ...e, deleted: true, dirty: true, serverKnown: true, syncError: undefined, updatedAt: Date.now() });
     }
+    const next = rows.filter((row) => !keep.has(row.id));
     for (const e of keep.values()) next.push(e);
     return { next, failed, pulled: next.length };
   });
@@ -132,13 +142,7 @@ async function doSync() {
     await setKV('setupMeta', { dirty: false, renames: [] });
   }
   await setKV('setupError', setupRejected ? String(data.setupError) : null);
-  if (data.setup && !setupRejected) {
-    await setKV('setupBase', {
-      expenseCategories: data.setup.expenseCategories.map((c) => c.name),
-      incomeSources: data.setup.incomeSources.map((c) => c.name),
-      rules: data.setup.rules.map((r) => r.id),
-    });
-  }
+  if (!setupRejected) await setKV('setupBase', setupKeys(data.setup));
   // Forget only what this request carried. A review done while it was in flight added
   // newer watermarks/skips that the reply could not know about: keep those and lay them
   // back over the setup we just took from the sheet.
@@ -168,6 +172,36 @@ async function doSync() {
   };
 }
 
+/** Setup edited on a phone that has never pulled the sheet's Setup (no `setupBase`): pull it
+ *  first and lay only the user's real edits over it (setup-rebase.js), so this sync can't blank
+ *  the sheet's budgets with the starter list. Renames made against the starter list are dropped
+ *  (the sheet's own rows keep their names). One kv transaction: a Setup save that lands while
+ *  the pull is in flight makes this a no-op and the sync stops, to be tapped again. */
+async function rebaseNeverPulledSetup(cfg, db) {
+  const meta = await getKV('setupMeta');
+  if (!meta || !meta.dirty || (await getKV('setupBase'))) return;
+  const { setup: sheetSetup } = validateCloudReply(await callSheet(cfg, EMPTY_PULL));
+  const applied = await new Promise((resolve, reject) => {
+    const t = db.transaction('kv', 'readwrite');
+    const kv = t.objectStore('kv');
+    const rSetup = kv.get('setup'), rMeta = kv.get('setupMeta');
+    let ok = false;
+    rMeta.onsuccess = () => {
+      const now = rMeta.result && rMeta.result.value;
+      if (!now || now.updatedAt !== meta.updatedAt) return;
+      const local = (rSetup.result && rSetup.result.value) || structuredClone(DEFAULT_SETUP);
+      kv.put({ key: 'setup', value: rebaseOntoSheet(local, sheetSetup, DEFAULT_SETUP) });
+      kv.put({ key: 'setupMeta', value: { ...now, renames: [] } });
+      kv.put({ key: 'setupBase', value: setupKeys(sheetSetup) });
+      ok = true;
+    };
+    t.oncomplete = () => resolve(ok);
+    t.onerror = (ev) => reject(ev.target.error);
+    t.onabort = (ev) => reject(ev.target.error || new Error('This phone’s storage refused the change.'));
+  });
+  if (!applied) throw new Error('Setup changed while syncing — tap Sync again.');
+}
+
 // fn(currentEntries) -> { next, ...extra }; `next` replaces the whole store.
 function rewriteEntries(db, fn) {
   return new Promise((resolve, reject) => {
@@ -182,8 +216,8 @@ function rewriteEntries(db, fn) {
       for (const e of next) s.put(e);
     };
     t.oncomplete = () => resolve(extra);
-    t.onerror = () => reject(t.error);
-    t.onabort = () => reject(t.error);
+    t.onerror = (ev) => reject(ev.target.error);
+    t.onabort = (ev) => reject(ev.target.error || new Error('This phone’s storage refused the change.'));
   });
 }
 function getAllRaw(db) {
@@ -265,11 +299,7 @@ function applyCloud(db, cloud, expected) {
       const set = (key, value) => kv.put({ key, value });
       set('setup', cloud.setup);
       set('setupMeta', { dirty: false, renames: [] });
-      set('setupBase', {
-        expenseCategories: cloud.setup.expenseCategories.map((c) => c.name),
-        incomeSources: cloud.setup.incomeSources.map((c) => c.name),
-        rules: cloud.setup.rules.map((r) => r.id),
-      });
+      set('setupBase', setupKeys(cloud.setup));
       set('watermarks', {});
       set('skips', {});
       set('setupError', null);
@@ -278,7 +308,7 @@ function applyCloud(db, cloud, expected) {
       outcome = { applied: true };
     };
     t.oncomplete = () => resolve(outcome);
-    t.onerror = () => reject(t.error);
-    t.onabort = () => reject(t.error || new Error('This phone’s storage refused the change.'));
+    t.onerror = (ev) => reject(ev.target.error);
+    t.onabort = (ev) => reject(ev.target.error || new Error('This phone’s storage refused the change.'));
   });
 }

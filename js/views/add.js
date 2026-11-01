@@ -57,6 +57,7 @@ function mountFields(preferType) {
 }
 
 async function onSave() {
+  fields.refreshDate();
   if (!fields.validate()) return;
   const v = fields.getValue();
   if (!v || !v.category) return;
@@ -68,7 +69,7 @@ async function onSave() {
     const keepType = fields.getType();
     mountFields(keepType);
     fields.focus();
-    toast('Saved', { label: 'Undo', onClick: () => deleteEntry(entry.id) });
+    toast('Saved', { label: 'Undo', onClick: () => deleteEntry(entry.id).catch((err) => toast('Could not undo: ' + (err?.message || err))) });
   } catch (err) {
     toast('Could not save: ' + (err?.message || err));
   } finally {
@@ -140,6 +141,7 @@ async function refreshRecent() {
 }
 
 async function refreshAll() {
+  fields?.refreshDate();
   await Promise.all([refreshDueBanner(), refreshMonthStrip(), refreshRecent(), fields?.refreshCategories()]);
   const saveBtn = $('#addSaveBtn', root);
   if (saveBtn && fields) saveBtn.disabled = !fields.hasCategories();
@@ -152,6 +154,8 @@ export default {
     root = r;
     render(root);
     refreshAll();
+    // back from the background, possibly on a later day: the month glance and due count move on too
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && root.classList.contains('active')) refreshAll(); });
   },
   show() { refreshAll(); },
   refresh() { refreshAll(); },

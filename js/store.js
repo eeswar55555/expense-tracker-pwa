@@ -20,7 +20,7 @@
 //                    skipped: ['YYYY-MM-DD'] }] }          // max 20 (Setup!J5:S24; skipped = Setup!W)
 //   lastPosted = every occurrence up to this date is posted or skipped (see recurring.js)
 
-import { uid } from './util.js';
+import { uid, toast } from './util.js';
 import { parseOccurrenceId } from './recurring.js';
 import { unsyncedTokens, describeUnsynced } from './cloud.js';
 
@@ -69,7 +69,17 @@ function openDB() {
         };
       }
     };
-    req.onsuccess = () => resolve(req.result);
+    // another window still has the old version open: the upgrade waits until it closes
+    req.onblocked = () => toast('Close this app’s other tabs or windows to finish updating it.');
+    req.onsuccess = () => {
+      const db = req.result;
+      // a newer version opened elsewhere: let its upgrade through instead of blocking it
+      db.onversionchange = () => {
+        db.close();
+        toast('This app was updated in another window.', { label: 'Reload', onClick: () => location.reload() });
+      };
+      resolve(db);
+    };
     req.onerror = () => reject(req.error);
   });
 }
@@ -84,8 +94,8 @@ async function tx(stores, mode, fn) {
     const t = db.transaction(stores, mode);
     const out = Promise.resolve(fn(t));
     t.oncomplete = () => resolve(out);
-    t.onerror = () => reject(t.error);
-    t.onabort = () => reject(t.error);
+    t.onerror = (ev) => reject(ev.target.error);
+    t.onabort = (ev) => reject(ev.target.error || new Error('This phone’s storage refused the change.'));
   });
 }
 
@@ -160,19 +170,25 @@ export async function restoreEntry(prev) {
   emitChange('entries');
 }
 
-/** Insert several new entries in one go (used for posting recurring items). */
+/** Insert several new entries in one go (used for posting recurring items). An id already
+ *  here keeps its serverKnown, so a later delete still reaches the sheet. */
 export async function addEntries(list) {
   await tx('entries', 'readwrite', (t) => {
     const s = t.objectStore('entries');
-    for (const e of list) s.put({ serverKnown: false, ...e, updatedAt: Date.now(), dirty: true, deleted: false });
+    for (const e of list) {
+      s.get(e.id).onsuccess = (ev) => {
+        const serverKnown = !!(ev.target.result && ev.target.result.serverKnown);
+        s.put({ ...e, serverKnown, updatedAt: Date.now(), dirty: true, deleted: false });
+      };
+    }
   });
   emitChange('entries');
 }
 
+/** How many changes are waiting for the sheet (the sync pill): entries, a Setup edit, and
+ *  recurring choices (Post / Skip), counted the same way as on the revert screen. */
 export async function pendingCount() {
-  const all = await tx('entries', 'readonly', (t) => reqP(t.objectStore('entries').getAll()));
-  const meta = await getKV('setupMeta');
-  return all.filter((e) => e.dirty).length + (meta && meta.dirty ? 1 : 0);
+  return (await snapshotUnsynced()).counts.total;
 }
 
 /** Everything on this phone the sheet has not seen yet, read in ONE transaction so the picture
@@ -213,22 +229,23 @@ export async function getSetup() {
  *  a renamed category is also renamed on every existing ledger row and rule,
  *  locally now and on the sheet at next sync. */
 export async function saveSetup(setup, renames = []) {
-  const meta = (await getKV('setupMeta')) || { dirty: false, renames: [] };
-  await setKV('setup', setup);
-  await setKV('setupMeta', { dirty: true, renames: [...(meta.renames || []), ...renames], updatedAt: Date.now() });
-  if (renames.length) {
-    await tx('entries', 'readwrite', (t) => {
-      const s = t.objectStore('entries');
-      s.openCursor().onsuccess = (ev) => {
-        const cur = ev.target.result;
-        if (!cur) return;
-        const e = cur.value;
-        const r = renames.find((x) => x.type === e.type && x.from === e.category);
-        if (r) cur.update({ ...e, category: r.to });   // not dirty: the server applies the same rename
-        cur.continue();
-      };
-    });
-  }
+  await tx(['kv', 'entries'], 'readwrite', (t) => {       // Setup, its pending flag and renamed entries change together
+    const kv = t.objectStore('kv');
+    kv.get('setupMeta').onsuccess = (ev) => {
+      const meta = (ev.target.result && ev.target.result.value) || { dirty: false, renames: [] };
+      kv.put({ key: 'setup', value: setup });
+      kv.put({ key: 'setupMeta', value: { dirty: true, renames: [...(meta.renames || []), ...renames], updatedAt: Date.now() } });
+    };
+    if (!renames.length) return;
+    t.objectStore('entries').openCursor().onsuccess = (ev) => {
+      const cur = ev.target.result;
+      if (!cur) return;
+      const e = cur.value;
+      const r = renames.find((x) => x.type === e.type && x.from === e.category);
+      if (r) cur.update({ ...e, category: r.to });   // not dirty: the server applies the same rename
+      cur.continue();
+    };
+  });
   emitChange('setup');
 }
 

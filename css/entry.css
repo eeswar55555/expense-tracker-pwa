@@ -5,8 +5,7 @@
 .date-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; position: relative; }
 .date-row .chip { flex: none; }
 .date-btn { font-weight: 700; }
-#ef-date-input,
-.add-date-input {
+.date-input {
   position: absolute; inset: 0; width: 1px; height: 1px;
   opacity: 0; pointer-events: none; border: none; padding: 0; margin: 0; min-height: 0;
 }

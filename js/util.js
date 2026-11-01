@@ -29,16 +29,17 @@ export function addDays(s, n) {
   return dateToStr(d);
 }
 
-/** 'YYYY-MM-DD' -> 'DD/MM/YYYY' (Indian format). */
+/** 'YYYY-MM-DD' -> 'DD/MM/YYYY' (Indian format). Anything else comes back escaped, as callers
+ *  put the result straight into innerHTML. */
 export function fmtDate(s) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(s || '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : esc(s || '');
 }
 
-/** 'YYYY-MM-DD' -> 'Thu, 02 Oct' (list headers). */
+/** 'YYYY-MM-DD' -> 'Thu, 02 Oct' (list headers). Anything else comes back escaped. */
 export function fmtDateLong(s) {
   const d = strToDate(s);
-  if (!d) return String(s || '');
+  if (!d) return esc(s || '');
   const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
   return `${wd}, ${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }

@@ -27,9 +27,13 @@ function writeLastCategory(type, category) {
  *  `initial` = { type, date, category, amount, description } (all optional).
  *  Returns { getValue(), validate(), focus(), setType(type) }.
  *  `getValue()` returns null if invalid (after validate() has shown errors). */
+let formSeq = 0;
+
 export function buildEntryFields(container, initial = {}) {
   const type0 = initial.type === 'Income' ? 'Income' : 'Expense';
   const date0 = initial.date || todayStr();
+  // The Add tab's form stays in the page while the editor sheet is open, so ids must differ per form.
+  const p = `ef${++formSeq}`;
 
   container.innerHTML = `
     <div class="seg field-type" role="group" aria-label="Entry type">
@@ -37,41 +41,42 @@ export function buildEntryFields(container, initial = {}) {
       <button type="button" data-type="Income" aria-pressed="${type0 === 'Income'}">Income</button>
     </div>
 
-    <label class="label" for="ef-amount">Amount</label>
-    <input id="ef-amount" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${initial.amount != null ? esc(String(initial.amount)) : ''}">
-    <div class="field-error" id="ef-amount-error"></div>
+    <label class="label" for="${p}-amount">Amount</label>
+    <input id="${p}-amount" class="ef-amount" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${initial.amount != null ? esc(String(initial.amount)) : ''}">
+    <div class="field-error ef-amount-error"></div>
 
     <div class="label">Date</div>
     <div class="date-row">
-      <button type="button" class="chip date-btn" id="ef-date-btn" aria-haspopup="true"></button>
-      <button type="button" class="chip" id="ef-date-today">Today</button>
-      <button type="button" class="chip" id="ef-date-yesterday">Yesterday</button>
-      <input type="date" id="ef-date-input" aria-label="Pick a date">
+      <button type="button" class="chip date-btn ef-date-btn" aria-haspopup="true"></button>
+      <button type="button" class="chip ef-date-today">Today</button>
+      <button type="button" class="chip ef-date-yesterday">Yesterday</button>
+      <input type="date" class="date-input ef-date-input" aria-label="Pick a date">
     </div>
-    <div class="hint" id="ef-date-hint" hidden>This date is in the future.</div>
+    <div class="hint ef-date-hint" hidden>This date is in the future.</div>
 
-    <label class="label" for="ef-category">Category</label>
-    <select id="ef-category"></select>
-    <div class="hint" id="ef-category-empty" hidden></div>
+    <label class="label" for="${p}-category">Category</label>
+    <select id="${p}-category" class="ef-category"></select>
+    <div class="hint ef-category-empty" hidden></div>
 
-    <label class="label" for="ef-description">Description <span class="muted">(optional)</span></label>
-    <input id="ef-description" type="text" maxlength="200" autocomplete="off" placeholder="e.g. Groceries" value="${esc(initial.description || '')}">
+    <label class="label" for="${p}-description">Description <span class="muted">(optional)</span></label>
+    <input id="${p}-description" class="ef-description" type="text" maxlength="200" autocomplete="off" placeholder="e.g. Groceries" value="${esc(initial.description || '')}">
   `;
 
   const typeSeg = $('.field-type', container);
-  const amountInput = $('#ef-amount', container);
-  const amountError = $('#ef-amount-error', container);
-  const dateBtn = $('#ef-date-btn', container);
-  const dateInput = $('#ef-date-input', container);
-  const dateHint = $('#ef-date-hint', container);
-  const todayBtn = $('#ef-date-today', container);
-  const yestBtn = $('#ef-date-yesterday', container);
-  const categorySelect = $('#ef-category', container);
-  const categoryEmpty = $('#ef-category-empty', container);
-  const descInput = $('#ef-description', container);
+  const amountInput = $('.ef-amount', container);
+  const amountError = $('.ef-amount-error', container);
+  const dateBtn = $('.ef-date-btn', container);
+  const dateInput = $('.ef-date-input', container);
+  const dateHint = $('.ef-date-hint', container);
+  const todayBtn = $('.ef-date-today', container);
+  const yestBtn = $('.ef-date-yesterday', container);
+  const categorySelect = $('.ef-category', container);
+  const categoryEmpty = $('.ef-category-empty', container);
+  const descInput = $('.ef-description', container);
 
   let type = type0;
   let date = date0;
+  let dateIsToday = !initial.date;   // "today" follows the calendar; a picked date stays put
   let setup = null;
   let firstPopulate = true; // use initial.category only the very first time
 
@@ -113,8 +118,8 @@ export function buildEntryFields(container, initial = {}) {
       categorySelect.innerHTML = '';
       categorySelect.hidden = true;
       categoryEmpty.hidden = false;
-      categoryEmpty.innerHTML = `No categories set up yet. <a href="#setup" id="ef-setup-link">Go to Setup</a>`;
-      const link = $('#ef-setup-link', categoryEmpty);
+      categoryEmpty.innerHTML = `No categories set up yet. <a href="#setup" class="ef-setup-link">Go to Setup</a>`;
+      const link = $('.ef-setup-link', categoryEmpty);
       link?.addEventListener('click', (e) => {
         e.preventDefault();
         $('.tabbar [data-tab="setup"]')?.click();
@@ -136,8 +141,8 @@ export function buildEntryFields(container, initial = {}) {
     if (btn) setType(btn.dataset.type);
   });
 
-  todayBtn.addEventListener('click', () => { date = todayStr(); updateDateUI(); });
-  yestBtn.addEventListener('click', () => { date = addDays(todayStr(), -1); updateDateUI(); });
+  todayBtn.addEventListener('click', () => { date = todayStr(); dateIsToday = true; updateDateUI(); });
+  yestBtn.addEventListener('click', () => { date = addDays(todayStr(), -1); dateIsToday = false; updateDateUI(); });
 
   function openPicker() {
     if (dateInput.showPicker) { try { dateInput.showPicker(); return; } catch {} }
@@ -146,7 +151,7 @@ export function buildEntryFields(container, initial = {}) {
   }
   dateBtn.addEventListener('click', openPicker);
   dateInput.addEventListener('change', () => {
-    if (dateInput.value) { date = dateInput.value; updateDateUI(); }
+    if (dateInput.value) { date = dateInput.value; dateIsToday = date === todayStr(); updateDateUI(); }
   });
 
   amountInput.addEventListener('input', () => {
@@ -201,6 +206,12 @@ export function buildEntryFields(container, initial = {}) {
      *  while this form stayed mounted). Preserves the current selection when
      *  it still exists. */
     async refreshCategories() { setup = null; ready = populateCategories(); await ready; },
+    /** The form stayed open past midnight (a PWA resumed the next morning): move "today" on
+     *  and re-label the chips. */
+    refreshDate() {
+      if (dateIsToday) date = todayStr();
+      updateDateUI();
+    },
   };
 }
 
@@ -309,9 +320,11 @@ export async function openEntryEditor(entry, opts = {}) {
     `;
     $('#ef-delete-no', buttonsRoot).onclick = showNormalButtons;
     $('#ef-delete-yes', buttonsRoot).onclick = async () => {
-      const prev = await deleteEntry(entry.id);
+      let prev;
+      try { prev = await deleteEntry(entry.id); }
+      catch (err) { toast('Could not delete: ' + (err?.message || err)); return; }
       finish('deleted');
-      if (prev) toast('Deleted', { label: 'Undo', onClick: () => restoreEntry(prev) });
+      if (prev) toast('Deleted', { label: 'Undo', onClick: () => restoreEntry(prev).catch((err) => toast('Could not undo: ' + (err?.message || err))) });
     };
   }
 

@@ -41,13 +41,19 @@ Apps Script README).
 
 ## Sync — what wins
 
-- Tap the pill in the header (it shows how many changes are waiting). Safe to tap any time,
-  repeatedly, or mid-way through a bad connection.
+- Tap the pill in the header (it shows how many changes are waiting: entries, a Setup edit and
+  recurring choices — Post / Skip — alike). Safe to tap any time, repeatedly, or mid-way through
+  a bad connection. An entry deleted (or a Save undone) while a sync is in flight is still
+  deleted on the sheet by the next one.
 - The **sheet is the source of truth**: after pushing your changes, the phone's copy is
   replaced with what the sheet holds — so edits made on the PC show up on the phone.
 - An entry edited on both sides before syncing: the phone's version wins (last write).
 - Setup is merged, not overwritten: a category or rule added on the sheet since your last
   sync is kept; one you deleted on the phone is removed.
+- A phone that edited Setup before it was ever connected first reads the sheet's Setup and lays
+  only your own edits on top, so the sheet's budgets, targets and rules survive the first sync.
+- The app asks the browser to keep its storage when space runs low (unsynced entries live only
+  on the phone until the next sync).
 
 ## Revert to the sheet's version (Settings > Advanced)
 
@@ -112,6 +118,7 @@ the new version.
 | `js/app.js` | Router, sync pill, Settings |
 | `js/store.js` | IndexedDB store (entries + Setup), change events, v1 → v2 migration |
 | `js/sync.js` | Two-way sync with `Code.gs` (contract documented at the top); also `peekCloud` / `revertToCloud` |
+| `js/setup-rebase.js` | First sync of a never-connected phone: your Setup edits laid over the sheet's (pure) |
 | `js/cloud.js`, `js/revert.js` | Revert to the sheet's version: pure rules (validation, what would be lost) and the two-step dialog |
 | `js/recurring.js` | Rule → due dates (mirrors `occurrences_()` in Code.gs) |
 | `js/analytics.js`, `js/charts.js` | Dashboard aggregation (pure) and hand-written SVG charts |
@@ -128,6 +135,7 @@ node ../tools/shot.mjs "http://localhost:8765/index.html?seed#dashboard" C:/tmp/
 cd ../google-sheets-mcp/apps-script/test && TZ=Asia/Kolkata node --test        # Code.gs unit tests
 TZ=Asia/Kolkata node e2e-server.cjs                                # fake Web App on :8766 running the real Code.gs
 node ../tools/shot.mjs "http://localhost:8765/index.html#history" C:/tmp/e.png --eval "$(cat ../tools/e2e-sync.js)"
+node ../tools/shot.mjs "http://127.0.0.1:8765/" C:/tmp/i.png --wait 3000 --eval-file ../tools/e2e-integrity.js   # fresh page + fresh e2e-server
 node ../tools/shot.mjs "http://localhost:8765/?seed&style=midnight" C:/tmp/t.png --wait 3000 \
      --eval-file ../tools/e2e-themes.js --eval2-file ../tools/e2e-themes.js [--dark]   # every style
 node ../tools/shot.mjs "http://localhost:8765/?seed&style=porcelain#dashboard" C:/tmp/p.png   # preview one style (not saved)

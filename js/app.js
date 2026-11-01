@@ -9,7 +9,7 @@
 // app = { navigate(tab, params), syncNow() }
 
 import { toast } from './util.js';
-import { onChange, pendingCount, getKV } from './store.js';
+import { onChange, pendingCount, getKV, rawDB } from './store.js';
 import { syncNow, getConfig, setConfig, isConfigured } from './sync.js';
 import { openRevertFlow, isRevertOpen } from './revert.js';
 import { initStyle } from './themes.js';
@@ -124,6 +124,9 @@ mountStylePicker(document.getElementById('styleGallery'));
 document.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.addEventListener('click', () => navigate(b.dataset.tab)));
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// unsynced entries live only here: ask the browser not to clear this site's storage when space runs low
+navigator.storage?.persist?.().catch(() => {});
+rawDB().catch(() => toast('This phone’s storage could not be opened (private browsing, or storage full?) — nothing can be saved.'));
 
 let startTab = location.hash.slice(1);
 if (!VIEWS[startTab]) { try { startTab = sessionStorage.getItem('etk.tab'); } catch {} }

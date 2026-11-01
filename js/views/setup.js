@@ -53,6 +53,14 @@ function openSheet(render) {
 
 // -------------------------------------------------------------------- data
 
+/** saveSetup with a message instead of a silent failure. Returns true once saved. */
+async function persist(newSetup, renames) {
+  try { await saveSetup(newSetup, renames); return true; }
+  catch (err) { toast('Could not save: ' + (err?.message || err)); return false; }
+}
+
+const CHANGED_MEANWHILE = 'This changed on the sheet while you were editing — close this and open it again.';
+
 async function loadAndRender() {
   setup = await getSetup();
   entries = await listEntries({ includeDeleted: true });
@@ -200,7 +208,7 @@ function renderRuleCard(r, i) {
         ${problem ? `<div class="rule-warn">${esc(problem)}</div>` : ''}
       </button>
       <label class="switch" aria-label="${esc(r.category || 'Rule')} active">
-        <input type="checkbox" role="switch" data-action="toggle-rule-active" data-index="${i}" ${r.active ? 'checked' : ''}>
+        <input type="checkbox" role="switch" data-action="toggle-rule-active" data-id="${esc(r.id)}" ${r.active ? 'checked' : ''}>
         <span class="switch-track" aria-hidden="true"></span>
       </label>
     </div>`;
@@ -228,7 +236,7 @@ function openEntityEditor(kind, index) {
       <label for="entGroup">Group</label>
       <select id="entGroup">${setup.groups.map((g) => `<option value="${esc(g)}" ${item.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>` : ''}
       <label for="entAmount">Monthly ${isIncome ? 'target' : 'budget'} (optional)</label>
-      <input id="entAmount" inputmode="decimal" placeholder="Leave blank for none" value="${item[amountField] ? item[amountField] : ''}">
+      <input id="entAmount" inputmode="decimal" placeholder="Leave blank for none" value="${item[amountField] ? esc(item[amountField]) : ''}">
       <div class="field-error" id="entError"></div>
       <div class="btn-row">
         ${!isNew ? '<button class="btn btn-danger" type="button" id="entDeleteBtn">Delete</button>' : ''}
@@ -243,8 +251,6 @@ function openEntityEditor(kind, index) {
       const name = q('#entName').value.trim();
       if (!name) { errEl.textContent = 'Name is required.'; return; }
       if (name.length > 40) { errEl.textContent = 'Name must be 40 characters or fewer.'; return; }
-      const dup = list.some((x, i) => i !== index && x.name.toLowerCase() === name.toLowerCase());
-      if (dup) { errEl.textContent = 'That name is already used.'; return; }
       const rawAmt = q('#entAmount').value.trim();
       let amt = null;
       if (rawAmt) {
@@ -253,21 +259,25 @@ function openEntityEditor(kind, index) {
       }
       const group = !isIncome ? q('#entGroup').value : undefined;
 
+      // `setup` is the latest copy (a sync may have replaced it while this sheet was open): find
+      // the item by name there, never by the position it had when the sheet opened
       const newSetup = structuredClone(setup);
       const newList = isIncome ? newSetup.incomeSources : newSetup.expenseCategories;
+      const at = isNew ? -1 : newList.findIndex((x) => x.name === item.name);
+      if (!isNew && at < 0) { errEl.textContent = CHANGED_MEANWHILE; return; }
+      if (newList.some((x, i) => i !== at && x.name.toLowerCase() === name.toLowerCase())) { errEl.textContent = 'That name is already used.'; return; }
       const renames = [];
       if (isNew) {
         if (newList.length >= limit) { errEl.textContent = `Limit of ${limit} reached.`; return; }
         newList.push(isIncome ? { name, target: amt } : { name, group, budget: amt });
       } else {
-        const old = newList[index];
-        if (old.name !== name) renames.push({ type: isIncome ? 'Income' : 'Expense', from: old.name, to: name });
-        newList[index] = isIncome ? { name, target: amt } : { name, group, budget: amt };
+        if (item.name !== name) renames.push({ type: isIncome ? 'Income' : 'Expense', from: item.name, to: name });
+        newList[at] = isIncome ? { name, target: amt } : { name, group, budget: amt };
       }
       if (renames.length) {
         for (const r of newSetup.rules) for (const rn of renames) if (r.type === rn.type && r.category === rn.from) r.category = rn.to;
       }
-      await saveSetup(newSetup, renames);
+      if (!(await persist(newSetup, renames))) return;
       toast('Saved.');
       closeSheet();
       await loadAndRender();
@@ -287,8 +297,10 @@ function openEntityEditor(kind, index) {
         if (!confirm(msg)) return;
         const newSetup = structuredClone(setup);
         const newList = isIncome ? newSetup.incomeSources : newSetup.expenseCategories;
-        newList.splice(index, 1);
-        await saveSetup(newSetup);
+        const at = newList.findIndex((x) => x.name === item.name);
+        if (at < 0) { errEl.textContent = CHANGED_MEANWHILE; return; }
+        newList.splice(at, 1);
+        if (!(await persist(newSetup))) return;
         toast('Deleted.');
         closeSheet();
         await loadAndRender();
@@ -304,7 +316,7 @@ async function moveEntity(kind, index, dir) {
   const j = index + dir;
   if (j < 0 || j >= list.length) return;
   [list[index], list[j]] = [list[j], list[index]];
-  await saveSetup(newSetup);
+  await persist(newSetup);
   await loadAndRender();
 }
 
@@ -343,7 +355,7 @@ function openRuleEditor(index) {
       <label for="ruleCategory">Category</label>
       <select id="ruleCategory">${categoryOptions(curType)}</select>
       <label for="ruleAmount">Amount</label>
-      <input id="ruleAmount" inputmode="decimal" placeholder="0.00" value="${base.amount || ''}">
+      <input id="ruleAmount" inputmode="decimal" placeholder="0.00" value="${esc(base.amount || '')}">
       <label for="ruleFrequency">Frequency</label>
       <select id="ruleFrequency">${FREQUENCIES.map((f) => `<option value="${f}" ${base.frequency === f ? 'selected' : ''}>${f}</option>`).join('')}</select>
       <div id="dayWeeklyField" hidden>
@@ -355,10 +367,10 @@ function openRuleEditor(index) {
         <select id="ruleDayMonthly">${domOptions()}</select>
       </div>
       <label for="ruleStart">Start date</label>
-      <input id="ruleStart" type="date" value="${base.start || ''}">
+      <input id="ruleStart" type="date" value="${esc(base.start || '')}">
       <div class="hint" id="ruleStartDisplay"></div>
       <label for="ruleEnd">End date (optional)</label>
-      <input id="ruleEnd" type="date" value="${base.end || ''}">
+      <input id="ruleEnd" type="date" value="${esc(base.end || '')}">
       <button type="button" class="btn btn-secondary btn-sm" id="ruleEndClearBtn">Clear end date</button>
       <label for="ruleDescription">Description (optional)</label>
       <input id="ruleDescription" maxlength="60" value="${esc(base.description || '')}">
@@ -465,14 +477,18 @@ function openRuleEditor(index) {
       const problem = ruleProblem(candidate);
       if (problem) { errEl.textContent = problem; return; }
       errEl.textContent = '';
-      const newSetup = structuredClone(setup);
+      const newSetup = structuredClone(setup);    // the latest copy: find the rule by id, not position
       if (isNew) {
         if (newSetup.rules.length >= LIMITS.rules) { errEl.textContent = `Limit of ${LIMITS.rules} recurring rules reached.`; return; }
         newSetup.rules.push(candidate);
       } else {
-        newSetup.rules[index] = candidate;
+        const at = newSetup.rules.findIndex((r) => r.id === base.id);
+        if (at < 0) { errEl.textContent = CHANGED_MEANWHILE; return; }
+        // posting/skipping is not edited here and may have moved on since the sheet opened
+        const cur = newSetup.rules[at];
+        newSetup.rules[at] = { ...candidate, lastPosted: cur.lastPosted || '', skipped: cur.skipped || [] };
       }
-      await saveSetup(newSetup);
+      if (!(await persist(newSetup))) return;
       toast('Recurring rule saved.');
       closeSheet();
       await loadAndRender();
@@ -482,8 +498,10 @@ function openRuleEditor(index) {
       q('#ruleDeleteBtn').addEventListener('click', async () => {
         if (!confirm(`Delete this recurring rule (${base.category || 'rule'})?`)) return;
         const newSetup = structuredClone(setup);
-        newSetup.rules.splice(index, 1);
-        await saveSetup(newSetup);
+        const at = newSetup.rules.findIndex((r) => r.id === base.id);
+        if (at < 0) { errEl.textContent = CHANGED_MEANWHILE; return; }
+        newSetup.rules.splice(at, 1);
+        if (!(await persist(newSetup))) return;
         toast('Recurring rule deleted.');
         closeSheet();
         await loadAndRender();
@@ -515,10 +533,11 @@ async function onClick(e) {
 async function onChange(e) {
   const t = e.target.closest('[data-action="toggle-rule-active"]');
   if (!t) return;
-  const idx = Number(t.dataset.index);
   const newSetup = structuredClone(setup);
-  newSetup.rules[idx].active = t.checked;
-  await saveSetup(newSetup);
+  const rule = newSetup.rules.find((r) => r.id === t.dataset.id);
+  if (!rule) { await loadAndRender(); return; }
+  rule.active = t.checked;
+  if (!(await persist(newSetup))) { await loadAndRender(); return; }
   toast(t.checked ? 'Rule activated.' : 'Rule paused.');
   await loadAndRender();
 }
