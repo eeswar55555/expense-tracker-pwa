@@ -12,12 +12,13 @@
 
 import { listEntries, getSetup } from '../store.js';
 import {
-  monthKey, fmtMonth, shiftMonth, todayStr, fmtDate, fmtMoney0, fmtMoneyShort, esc,
+  monthKey, fmtMonth, shiftMonth, todayStr, fmtDate, fmtMoney0, fmtMoneyShort, esc, strToDate,
 } from '../util.js';
 import {
   indexByMonth, emptyBucket, bucketTotals, mergeBuckets, monthsOfYear, monthsElapsedIn,
-  pace, budgetInfo, budgetStatus, delta, topN, last12, lastN,
+  pace, budgetInfo, budgetStatus, delta, topN, last12, lastN, summarizeUpcoming,
 } from '../analytics.js';
+import { upcomingItems } from '../recurring.js';
 import { monthlyBarChart, yoyLineChart, legendRow, heatStyle } from '../charts.js';
 import { openEntryEditor } from './entry-form.js';
 
@@ -243,6 +244,7 @@ function renderMonth(entries, setup) {
   const t = bucketTotals(bucket), pt = bucketTotals(prevBucket);
   return [
     summarySection(t, pt),
+    upcomingSection(entries, setup, mk),
     budgetSection(bucket, setup, mk),
     groupSection(bucket, setup),
     categorySection(bucket, setup, { month: mk, type: 'Expense' }, 'Category Breakdown', 'No expenses recorded this month.'),
@@ -262,6 +264,37 @@ function summarySection(t, pt) {
     statTile('Savings rate', `${(t.savingsRate * 100).toFixed(1)}%`, fmtDeltaPP(t.savingsRate, pt.savingsRate, pt.income > 0), 1),
   ].join('');
   return `<div class="card"><div class="card-title">Summary</div><div class="stat-grid">${tiles}</div></div>`;
+}
+
+/** Recurring items due in the next 30 days — the one forward-looking card. Only on the
+ *  current month: for any other month it would not describe what is on screen. */
+const UPCOMING_DAYS = 30, UPCOMING_SHOWN = 6;
+function upcomingSection(entries, setup, mk) {
+  if (mk !== monthKey(todayStr())) return '';
+  const rules = (setup.rules || []).filter((r) => r.active);
+  if (!rules.length) return '';
+  const today = todayStr();
+  const items = upcomingItems(setup, entries, today, UPCOMING_DAYS);
+  const title = `<div class="card-title">Coming up<span class="sub">next ${UPCOMING_DAYS} days &middot; recurring</span></div>`;
+  if (!items.length) return `<div class="card">${title}<div class="empty">Nothing scheduled in the next ${UPCOMING_DAYS} days.</div></div>`;
+
+  const s = summarizeUpcoming(items);
+  const tile = (label, value, cls) => `<div class="stat-tile"><div class="tile-label">${label}</div><div class="tile-value ${cls}">${esc(value)}</div></div>`;
+  const tiles = [
+    tile('Money in', fmtMoney0(s.income), 'amt-income'),
+    tile('Money out', fmtMoney0(s.expense), 'amt-expense'),
+    tile('Net', fmtMoney0(s.net), ''),
+  ].join('');
+  const inDays = (date) => {
+    const n = Math.round((strToDate(date) - strToDate(today)) / 86400000);
+    return n === 1 ? 'Tomorrow' : `in ${n} days`;
+  };
+  const rows = items.slice(0, UPCOMING_SHOWN).map((it) => `<div class="up-row">
+    <div class="top-row-main"><span class="top-cat">${esc(it.category)}</span><span class="top-desc muted">${esc(it.description || '')}</span></div>
+    <div class="top-row-side"><span class="top-date muted">${fmtDate(it.date)} &middot; ${inDays(it.date)}</span><span class="${it.type === 'Income' ? 'amt-income' : 'amt-expense'}">${it.type === 'Income' ? '+' : '−'}${esc(fmtMoney0(it.amount))}</span></div>
+  </div>`).join('');
+  const more = items.length > UPCOMING_SHOWN ? `<div class="hint">+ ${items.length - UPCOMING_SHOWN} more in this period</div>` : '';
+  return `<div class="card">${title}<div class="stat-grid stat-grid-3">${tiles}</div>${rows}${more}</div>`;
 }
 
 function budgetRow(name, actual, budget, mk) {

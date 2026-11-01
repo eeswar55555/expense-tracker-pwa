@@ -73,8 +73,22 @@
 .due-list { max-height: 48vh; overflow-y: auto; margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; }
 .due-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); min-height: 44px; }
 .due-row:last-child { border-bottom: none; }
-.due-row input[type="checkbox"] { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--ink); flex: none; }
+.due-row input[type="checkbox"] { width: 22px; height: 22px; margin-top: 9px; accent-color: var(--ink); flex: none; }
 .due-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.due-row-top { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.due-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; }
+.due-row-name { margin: 0; flex: 1; min-width: 0; font-size: 15px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.due-amt-wrap { display: inline-flex; align-items: center; gap: 2px; flex: none; font-weight: 700; }
+.due-amt-wrap input.due-amt {
+  width: 112px; min-height: 40px; padding: 6px 10px; text-align: right;
+  font-weight: 700; color: inherit; font-variant-numeric: tabular-nums;
+}
 .due-row-sub { font-size: 12.5px; }
+.due-row-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; }
+.due-was { font-size: 12px; }
+.link-btn {
+  background: none; border: none; padding: 8px 4px; min-height: 36px; margin-left: auto;
+  color: var(--text-2); font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer;
+}
+.link-btn:disabled { opacity: .5; }
 .due-total { font-weight: 700; text-align: right; padding: 8px 4px; }
+.due-flag { color: var(--warn); font-weight: 700; }

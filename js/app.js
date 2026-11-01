@@ -66,7 +66,15 @@ async function runSync() {
   busy = true; updateSyncPill();
   try {
     const r = await syncNow();
-    toast(r.failed ? `Synced, but ${r.failed} item(s) were rejected — see History.` : r.pushed ? `Synced ${r.pushed} change(s).` : 'Up to date with the sheet.');
+    let msg = r.failed ? `Synced, but ${r.failed} item(s) were rejected — see History.` : r.pushed ? `Synced ${r.pushed} change(s).` : 'Up to date with the sheet.';
+    if (r.recurringError) msg += ' The sheet’s automatic recurring posting failed — see Setup.';
+    else if (r.staleServer) {
+      // an older Code.gs can't remember skipped items or keep unticked ones due: say so once per session
+      let shown = true;
+      try { shown = !!sessionStorage.getItem('etk.staleServerShown'); sessionStorage.setItem('etk.staleServerShown', '1'); } catch {}
+      if (!shown) msg += ' The sheet’s Code.gs is out of date — re-deploy it to get the latest recurring fixes.';
+    }
+    toast(msg);
   } catch (err) {
     toast(err.message);
   } finally {

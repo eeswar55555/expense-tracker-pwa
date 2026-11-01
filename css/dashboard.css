@@ -77,6 +77,12 @@
 .top-date { font-size: 12px; }
 .top-row-side .amt-expense { font-weight: 700; font-size: 14px; }
 
+/* "Coming up" (recurring forecast) rows: same layout as the top list, not tappable. */
+.up-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.up-row:last-child { border-bottom: none; }
+.up-row .top-row-side .amt-income, .up-row .top-row-side .amt-expense { font-weight: 700; font-size: 14px; }
+.stat-grid + .up-row { margin-top: 6px; }
+
 /* ----------------------------------------------------------------- charts */
 
 .dash-chart { width: 100%; height: auto; display: block; touch-action: manipulation; }

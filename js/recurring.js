@@ -13,6 +13,19 @@ const WEEKLY = { Weekly: true, Fortnightly: true };
 
 export const occurrenceId = (ruleId, date) => `rec-${ruleId}-${date}`;
 
+const REC_ID = /^rec-([A-Za-z0-9]+)-(\d{4}-\d{2}-\d{2})$/;
+/** 'rec-<ruleId>-<YYYY-MM-DD>' -> { ruleId, date }, or null for any other id. */
+export function parseOccurrenceId(id) {
+  const m = REC_ID.exec(String(id || ''));
+  return m ? { ruleId: m[1], date: m[2] } : null;
+}
+
+// An occurrence is in one of three states, and only the first is ever offered:
+//   due      neither of the below  -> shown in "Review due", stays due until settled
+//   posted   a ledger entry with its id exists
+//   skipped  listed in rule.skipped (an explicit "Skip" — leaving an item unticked is NOT a skip)
+// rule.lastPosted ("watermark") means: everything up to this date is posted or skipped.
+
 /** Every 'YYYY-MM-DD' this rule falls on within [from, to] (inclusive). */
 export function occurrences(rule, from, to) {
   const out = [];
@@ -66,21 +79,57 @@ export function ruleProblem(rule) {
 export function dueItems(setup, entries, today = todayStr()) {
   const have = new Set(entries.map((e) => e.id));
   // Same guard as the sheet's postRecurring: an item already typed in by hand (same
-  // type, date, category and amount) counts as posted.
+  // type, date, category and amount) counts as posted. Recurring rows (rec-...) are
+  // left out: two rules with the same category, amount and day are two postings.
   const sig = (type, date, category, amount) => `${type}|${date}|${String(category).toLowerCase()}|${Number(amount).toFixed(2)}`;
-  const typed = new Set(entries.filter((e) => !e.deleted).map((e) => sig(e.type, e.date, e.category, e.amount)));
+  const typed = new Set(entries.filter((e) => !e.deleted && !parseOccurrenceId(e.id)).map((e) => sig(e.type, e.date, e.category, e.amount)));
   const out = [];
   for (const rule of setup.rules || []) {
     if (!rule.active || ruleProblem(rule)) continue;
+    const skipped = new Set(rule.skipped || []);
     const from = rule.lastPosted ? addDays(rule.lastPosted, 1) : rule.start;
     const to = rule.end && rule.end < today ? rule.end : today;
     for (const date of occurrences(rule, from, to)) {
       const id = occurrenceId(rule.id, date);
-      if (have.has(id) || typed.has(sig(rule.type, date, rule.category, rule.amount))) continue;
+      if (skipped.has(date) || have.has(id) || typed.has(sig(rule.type, date, rule.category, rule.amount))) continue;
       out.push({ id, ruleId: rule.id, type: rule.type, date, category: rule.category, amount: Number(rule.amount), description: rule.description || '' });
     }
   }
-  out.sort((a, b) => (a.date < b.date ? -1 : 1));
+  out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.ruleId < b.ruleId ? -1 : 1));
+  return out;
+}
+
+/** How far a rule's watermark may advance after a review. `items` = that rule's due items
+ *  (oldest first) as they were offered; `settled` = ids posted or skipped so far. Walks
+ *  forward over the settled ones and stops at the first still-due item, so an item left for
+ *  later is never jumped over. Returns a 'YYYY-MM-DD' date, or '' when nothing can advance. */
+export function settledThrough(items, settled) {
+  let mark = '';
+  for (const it of items) {
+    if (!settled.has(it.id)) break;
+    mark = it.date;
+  }
+  return mark;
+}
+
+/** Occurrences expected AFTER today and up to `days` days ahead, soonest first — what the
+ *  dashboard's "Coming up" card shows. Same rules as dueItems (active, valid, not skipped,
+ *  not already in the ledger), but looking forward instead of back. */
+export function upcomingItems(setup, entries, today = todayStr(), days = 30) {
+  const have = new Set(entries.map((e) => e.id));
+  const horizon = addDays(today, days);
+  const out = [];
+  for (const rule of setup.rules || []) {
+    if (!rule.active || ruleProblem(rule)) continue;
+    const skipped = new Set(rule.skipped || []);
+    const to = rule.end && rule.end < horizon ? rule.end : horizon;
+    for (const date of occurrences(rule, addDays(today, 1), to)) {
+      const id = occurrenceId(rule.id, date);
+      if (skipped.has(date) || have.has(id)) continue;
+      out.push({ id, ruleId: rule.id, type: rule.type, date, category: rule.category, amount: Number(rule.amount), description: rule.description || '' });
+    }
+  }
+  out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.ruleId < b.ruleId ? -1 : 1));
   return out;
 }
 

@@ -7,17 +7,20 @@
 //            renames: [ { type, from, to } ],
 //            setupBase: { expenseCategories: [name], incomeSources: [name], rules: [id] } | null,
 //                       // keys as of the last pull, so the sheet can merge instead of overwrite
-//            watermarks: { <ruleId>: 'YYYY-MM-DD' } }
+//            watermarks: { <ruleId>: 'YYYY-MM-DD' },   // "settled (posted or skipped) up to here"
+//            skips: { <ruleId>: ['YYYY-MM-DD'] } }      // occurrences skipped for good (sheet: union)
 // Response { ok: true, results: [ { id, status: 'ok'|'error', message? } ],
 //            ledger: { Expense: [Row], Income: [Row] },   // Row = { id, date, category, amount, description }
-//            setup: <Setup>, serverTime }
+//            setup: <Setup>, serverTime,
+//            recurringApi: 2,                              // absent on a Code.gs that predates skips
+//            recurringRun: { at, by, ok, posted, message } | null }   // last menu / daily run
 //        | { error: '...' }
 //
 // The sheet is the source of truth: after the push, the local cache is replaced
 // by what the sheet holds, except entries changed on the phone while the request
 // was in flight (or whose op failed) — those stay dirty for the next sync.
 
-import { getKV, setKV, getSetup, emitChange, rawDB } from './store.js';
+import { getKV, setKV, getSetup, emitChange, rawDB, reapplyPending } from './store.js';
 
 const LS = { url: 'etk.webAppUrl', secret: 'etk.secret' };
 
@@ -54,6 +57,7 @@ async function doSync() {
   const setupMeta = (await getKV('setupMeta')) || { dirty: false, renames: [] };
   const setup = setupMeta.dirty ? await getSetup() : null;
   const watermarks = (await getKV('watermarks')) || {};
+  const skips = (await getKV('skips')) || {};
   const setupBase = setup ? (await getKV('setupBase')) || null : null;
 
   // text/plain keeps this a CORS "simple request": Apps Script Web Apps can't
@@ -65,7 +69,7 @@ async function doSync() {
     const res = await fetch(cfg.webAppUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ secret: cfg.secret, action: 'sync', ops, setup, renames: setupMeta.renames || [], setupBase, watermarks }),
+      body: JSON.stringify({ secret: cfg.secret, action: 'sync', ops, setup, renames: setupMeta.renames || [], setupBase, watermarks, skips }),
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -117,11 +121,32 @@ async function doSync() {
       rules: data.setup.rules.map((r) => r.id),
     });
   }
-  await setKV('watermarks', {});
+  // Forget only what this request carried. A review done while it was in flight added
+  // newer watermarks/skips that the reply could not know about: keep those and lay them
+  // back over the setup we just took from the sheet.
+  const skipsPersisted = data.recurringApi >= 2;   // an older Code.gs ignores `skips`: keep them on the phone
+  const wmNow = (await getKV('watermarks')) || {};
+  for (const id of Object.keys(watermarks)) if (wmNow[id] && wmNow[id] <= watermarks[id]) delete wmNow[id];
+  await setKV('watermarks', wmNow);
+  if (skipsPersisted) {
+    const skNow = (await getKV('skips')) || {};
+    for (const id of Object.keys(skips)) {
+      skNow[id] = (skNow[id] || []).filter((d) => !skips[id].includes(d));
+      if (!skNow[id].length) delete skNow[id];
+    }
+    await setKV('skips', skNow);
+  }
+  await reapplyPending();
+  await setKV('recurringRun', data.recurringRun || null);
   await setKV('lastSync', Date.now());
 
   emitChange('sync');
-  return { pushed: ops.length - failed, failed, pulled };
+  const runFailed = data.recurringRun && data.recurringRun.ok === false;
+  return {
+    pushed: ops.length - failed, failed, pulled,
+    staleServer: !(data.recurringApi >= 2),
+    recurringError: runFailed ? (data.recurringRun.message || 'unknown error') : '',
+  };
 }
 
 // fn(currentEntries) -> { next, ...extra }; `next` replaces the whole store.

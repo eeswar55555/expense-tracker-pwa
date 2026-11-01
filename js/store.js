@@ -3,7 +3,7 @@
 //
 // IndexedDB 'expense-tracker' v2
 //   entries  keyPath 'id'   — the ledger (a cache of the sheet + local edits)
-//   kv       keyPath 'key'  — 'setup', 'setupMeta', 'watermarks', 'lastSync'
+//   kv       keyPath 'key'  — 'setup', 'setupMeta', 'watermarks', 'skips', 'recurringRun', 'lastSync'
 //
 // Entry: { id, type: 'Expense'|'Income', date: 'YYYY-MM-DD', category, amount,
 //          description, updatedAt, dirty, deleted, serverKnown, syncError? }
@@ -16,9 +16,12 @@
 //          incomeSources:     [{ name, target }],          // max 10 (Setup!E5:F14)
 //          groups:            ['Fixed', ...],              // Setup!H5:H8, read-only
 //          rules: [{ id, type, category, amount, frequency, day, start, end,
-//                    description, active, lastPosted }] }  // max 20 (Setup!J5:S24)
+//                    description, active, lastPosted,
+//                    skipped: ['YYYY-MM-DD'] }] }          // max 20 (Setup!J5:S24; skipped = Setup!V)
+//   lastPosted = every occurrence up to this date is posted or skipped (see recurring.js)
 
 import { uid } from './util.js';
+import { parseOccurrenceId } from './recurring.js';
 
 const DB_NAME = 'expense-tracker';
 const DB_VERSION = 2;
@@ -136,6 +139,14 @@ export async function deleteEntry(id) {
     if (existing.serverKnown) s.put({ ...existing, deleted: true, dirty: true, updatedAt: Date.now() });
     else s.delete(id);
   });
+  // Deleting a posted recurring item must keep it deleted. The watermark already covers it
+  // unless an earlier occurrence is still due (the watermark then sits before it), in which
+  // case the occurrence would reappear as due: record it as skipped instead.
+  const occ = parseOccurrenceId(id);
+  if (occ) {
+    const rule = (await getSetup()).rules.find((r) => r.id === occ.ruleId);
+    if (rule && (!rule.lastPosted || occ.date > rule.lastPosted)) await addSkips([{ ruleId: occ.ruleId, date: occ.date }]);
+  }
   emitChange('entries');
   return existing;
 }
@@ -143,6 +154,8 @@ export async function deleteEntry(id) {
 /** Put back exactly what deleteEntry() returned. */
 export async function restoreEntry(prev) {
   await tx('entries', 'readwrite', (t) => t.objectStore('entries').put({ ...prev, deleted: false, dirty: true, updatedAt: Date.now() }));
+  const occ = parseOccurrenceId(prev.id);
+  if (occ) await removeSkip(occ.ruleId, occ.date);
   emitChange('entries');
 }
 
@@ -208,9 +221,10 @@ export function categoryNames(setup, type) {
     : setup.expenseCategories.map((c) => c.name).filter(Boolean);
 }
 
-/** Record that recurring items up to `date` were posted from this phone, so the
- *  sheet's LAST POSTED watermark advances at next sync even if the user later
- *  deletes one of those entries before syncing. */
+/** Record that every occurrence of a rule up to `date` is settled (posted or skipped),
+ *  so the sheet's LAST POSTED watermark advances at next sync even if the user later
+ *  deletes one of those entries before syncing. Callers must only pass a date that no
+ *  still-due occurrence lies on or before (see recurring.js settledThrough). */
 export async function bumpWatermark(ruleId, date) {
   const wm = (await getKV('watermarks')) || {};
   if (!wm[ruleId] || wm[ruleId] < date) wm[ruleId] = date;
@@ -221,4 +235,49 @@ export async function bumpWatermark(ruleId, date) {
     rule.lastPosted = date;
     await setKV('setup', setup);   // local display only; not a setup edit
   }
+}
+
+/** The user chose to skip these occurrences for good: [{ ruleId, date }]. Remembered
+ *  locally at once (kv 'skips' = pending push, plus rule.skipped for display/due math)
+ *  and sent to the sheet's hidden SKIPPED cell at next sync. Not a setup edit. */
+export async function addSkips(list) {
+  const pending = (await getKV('skips')) || {};
+  const setup = await getSetup();
+  for (const { ruleId, date } of list) {
+    pending[ruleId] = unionDates(pending[ruleId], [date]);
+    const rule = setup.rules.find((r) => r.id === ruleId);
+    if (rule) rule.skipped = unionDates(rule.skipped, [date]);
+  }
+  await setKV('skips', pending);
+  await setKV('setup', setup);
+  emitChange('setup');
+}
+
+/** Undo a skip that hasn't reached the sheet yet (used when a delete is undone). */
+export async function removeSkip(ruleId, date) {
+  const pending = (await getKV('skips')) || {};
+  const setup = await getSetup();
+  const rule = setup.rules.find((r) => r.id === ruleId);
+  if (pending[ruleId]) { pending[ruleId] = pending[ruleId].filter((d) => d !== date); if (!pending[ruleId].length) delete pending[ruleId]; }
+  if (rule && rule.skipped) rule.skipped = rule.skipped.filter((d) => d !== date);
+  await setKV('skips', pending);
+  await setKV('setup', setup);
+  emitChange('setup');
+}
+
+const unionDates = (a, b) => [...new Set([...(a || []), ...(b || [])])].sort();
+
+/** Lay watermarks and skips that haven't reached the sheet yet over the stored setup.
+ *  sync.js calls this after replacing the setup with the sheet's copy, which can't
+ *  know about a review done while the sync request was in flight. */
+export async function reapplyPending() {
+  const wm = (await getKV('watermarks')) || {};
+  const sk = (await getKV('skips')) || {};
+  if (!Object.keys(wm).length && !Object.keys(sk).length) return;
+  const setup = await getSetup();
+  for (const rule of setup.rules) {
+    if (wm[rule.id] && (!rule.lastPosted || rule.lastPosted < wm[rule.id])) rule.lastPosted = wm[rule.id];
+    if (sk[rule.id]) rule.skipped = unionDates(rule.skipped, sk[rule.id]);
+  }
+  await setKV('setup', setup);
 }

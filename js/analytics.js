@@ -28,6 +28,16 @@ export function totals(entries) {
   return { income, expense, net: income - expense, savingsRate: income > 0 ? (income - expense) / income : 0 };
 }
 
+/** In / out / net of upcoming recurring items (recurring.js upcomingItems). */
+export function summarizeUpcoming(items) {
+  let income = 0, expense = 0;
+  for (const it of items) {
+    if (it.type === 'Income') income += num(it.amount);
+    else expense += num(it.amount);
+  }
+  return { income, expense, net: income - expense, count: items.length };
+}
+
 /** Map category/source name -> total amount, for one ledger type. */
 export function sumByCategory(entries, type) {
   const m = new Map();

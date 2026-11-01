@@ -2,7 +2,7 @@
 // (read-only), and recurring transactions. Every edit saves immediately via
 // saveSetup() — there is no global Save button.
 
-import { getSetup, saveSetup, listEntries, categoryNames, LIMITS, FREQUENCIES } from '../store.js';
+import { getSetup, saveSetup, listEntries, categoryNames, getKV, LIMITS, FREQUENCIES } from '../store.js';
 import { dueItems, ruleProblem, nextOccurrence, occurrences } from '../recurring.js';
 import { fmtDate, fmtMoney, parseAmount, shortId, esc, toast, todayStr, addDays, strToDate } from '../util.js';
 import { openDueReview } from './due.js';
@@ -10,6 +10,7 @@ import { openDueReview } from './due.js';
 let setup = null;
 let entries = [];
 let due = [];
+let runInfo = null;   // how the sheet's last menu / daily "post recurring" run went (from the last sync)
 let rootEl = null;
 
 // --------------------------------------------------------------- sheet host
@@ -55,7 +56,17 @@ async function loadAndRender() {
   setup = await getSetup();
   entries = await listEntries({ includeDeleted: true });
   due = dueItems(setup, entries);
+  runInfo = (await getKV('recurringRun')) || null;
   if (rootEl) rootEl.innerHTML = renderView();
+}
+
+function renderRunStatus() {
+  if (!runInfo || !runInfo.at) return '';
+  const when = new Date(runInfo.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  if (!runInfo.ok) {
+    return `<div class="rule-warn" role="alert">The sheet's automatic posting failed on ${esc(when)}: ${esc(runInfo.message || 'unknown error')}. Nothing was lost — tap Review above, or run Finance → Post due recurring on the sheet.</div>`;
+  }
+  return `<div class="hint">Sheet ${runInfo.by === 'timer' ? 'auto-run' : 'run'} on ${esc(when)}: ${Number(runInfo.posted) || 0} posted.</div>`;
 }
 
 function sumField(list, field) {
@@ -153,16 +164,18 @@ function renderRecurringCard() {
     <div class="card">
       <div class="card-title">Recurring transactions<span class="sub">${setup.rules.length}/${LIMITS.rules}</span></div>
       ${banner}
+      ${renderRunStatus()}
       ${cards || '<div class="empty">No recurring rules yet.</div>'}
       <button class="btn btn-secondary btn-sm" type="button" data-action="add-rule" ${atLimit ? 'disabled' : ''}>+ Add recurring</button>
       ${atLimit ? `<div class="hint">Limit of ${LIMITS.rules} recurring rules reached.</div>` : ''}
-      <div class="hint">Due items are posted when you review them here (tap Review), or automatically by the sheet's daily trigger if you have enabled one. An item can never be posted twice.</div>
+      <div class="hint">Due items are posted when you review them here (tap Review), or automatically by the sheet's daily trigger if you have enabled one. An item can never be posted twice, and an item you leave unticked stays due until you post or skip it.</div>
     </div>`;
 }
 
 function renderRuleCard(r, i) {
   const problem = ruleProblem(r);
   const next = nextOccurrence(r);
+  const dueNow = due.filter((d) => d.ruleId === r.id).length;
   return `
     <div class="rule-card">
       <button class="rule-card-main" type="button" data-action="edit-rule" data-index="${i}" aria-label="Edit recurring rule for ${esc(r.category || 'rule')}">
@@ -172,6 +185,7 @@ function renderRuleCard(r, i) {
         </div>
         <div class="rule-card-line muted">${esc(r.frequency || '')}${r.frequency ? ' · ' + esc(dayLabel(r)) : ''}</div>
         <div class="rule-card-line muted">Next: ${next ? fmtDate(next) : '—'} · Last posted: ${r.lastPosted ? fmtDate(r.lastPosted) : 'Never'}</div>
+        ${dueNow ? `<div class="rule-card-line due-flag">${dueNow} due now</div>` : ''}
         ${r.description ? `<div class="rule-card-line muted">${esc(r.description)}</div>` : ''}
         ${problem ? `<div class="rule-warn">${esc(problem)}</div>` : ''}
       </button>
@@ -400,6 +414,7 @@ function openRuleEditor(index) {
         description: descInput.value.trim(),
         active: activeInput.checked,
         lastPosted: base.lastPosted || '',
+        skipped: base.skipped || [],
       };
     }
 

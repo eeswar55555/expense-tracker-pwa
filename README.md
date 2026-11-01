@@ -21,12 +21,23 @@ Personal project, hosted on a personal GitHub Pages account — nothing GEP-rela
 
 Add a rule in **Setup → Recurring** (type, category, amount, Monthly / Fortnightly / Weekly /
 Quarterly / Yearly, day, start date, optional end date). When occurrences come due, the app
-shows **"N due · Review"**: tick what to post, untick what to skip (skipped items are never
-offered again). A start date in the past back-fills missed occurrences.
+shows **"N due · Review"**. Each due item ends one of three ways:
+
+- **Post** — tick it and press *Post N selected*. The amount is editable first, for bills that
+  differ from the rule (the rule's amount is shown underneath for reference).
+- **Later** — leave it unticked. Nothing happens: it stays due, is counted in the banner, and is
+  offered again next time (also after a sync).
+- **Skip** — *Skip this one* (with a confirmation) drops that occurrence for good.
+
+A start date in the past back-fills missed occurrences. The dashboard's **Coming up** card
+(current month) lists what the rules will post in the next 30 days. The rule's *Last posted*
+date only moves past occurrences that were posted or skipped, never past one that is still due.
 
 Optional: also let the sheet post them itself every morning (Apps Script → Triggers → add
 `postRecurring`, time-driven, day timer). Both paths give each occurrence the same id
-(`rec-<rule>-<date>`), so an item can never be posted twice.
+(`rec-<rule>-<date>`), so an item can never be posted twice. If that daily run ever fails, the
+Setup tab shows a red warning after the next sync (and Apps Script can e-mail you — see the
+Apps Script README).
 
 ## Sync — what wins
 
