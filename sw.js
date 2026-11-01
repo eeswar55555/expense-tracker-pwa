@@ -3,7 +3,7 @@
 // falling back to the cache when offline. Cross-origin calls (the Apps Script
 // sync endpoint) are never intercepted or cached.
 
-const CACHE = 'expense-tracker-v7';
+const CACHE = 'expense-tracker-v8';
 const SHELL = [
   './',
   './index.html',

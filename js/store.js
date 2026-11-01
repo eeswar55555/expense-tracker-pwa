@@ -219,6 +219,26 @@ export async function setKV(key, value) {
   await tx('kv', 'readwrite', (t) => t.objectStore('kv').put({ key, value }));
 }
 
+/** Read `keys`, then write what fn({ key: value }) returns ({ key: newValue }), in ONE
+ *  transaction: nothing can be saved in between, so this never undoes another change. */
+export async function updateKV(keys, fn) {
+  let out;
+  await tx('kv', 'readwrite', (t) => {
+    const kv = t.objectStore('kv');
+    const now = {};
+    let left = keys.length;
+    for (const k of keys) {
+      kv.get(k).onsuccess = (ev) => {
+        now[k] = ev.target.result ? ev.target.result.value : undefined;
+        if (--left) return;
+        out = fn(now) || {};
+        for (const [key, value] of Object.entries(out)) kv.put({ key, value });
+      };
+    }
+  });
+  return out;
+}
+
 // ------------------------------------------------------------------- setup
 
 export async function getSetup() {
@@ -261,58 +281,56 @@ export function categoryNames(setup, type) {
  *  deletes one of those entries before syncing. Callers must only pass a date that no
  *  still-due occurrence lies on or before (see recurring.js settledThrough). */
 export async function bumpWatermark(ruleId, date) {
-  const wm = (await getKV('watermarks')) || {};
-  if (!wm[ruleId] || wm[ruleId] < date) wm[ruleId] = date;
-  await setKV('watermarks', wm);
-  const setup = await getSetup();
-  const rule = setup.rules.find((r) => r.id === ruleId);
-  if (rule && (!rule.lastPosted || rule.lastPosted < date)) {
+  await updateKV(['watermarks', 'setup'], (now) => {
+    const wm = now.watermarks || {};
+    if (!wm[ruleId] || wm[ruleId] < date) wm[ruleId] = date;
+    const setup = now.setup || structuredClone(DEFAULT_SETUP);
+    const rule = setup.rules.find((r) => r.id === ruleId);
+    if (!rule || (rule.lastPosted && rule.lastPosted >= date)) return { watermarks: wm };
     rule.lastPosted = date;
-    await setKV('setup', setup);   // local display only; not a setup edit
-  }
+    return { watermarks: wm, setup };   // the setup change is local display only; not a setup edit
+  });
 }
 
 /** The user chose to skip these occurrences for good: [{ ruleId, date }]. Remembered
  *  locally at once (kv 'skips' = pending push, plus rule.skipped for display/due math)
  *  and sent to the sheet's hidden SKIPPED cell at next sync. Not a setup edit. */
 export async function addSkips(list) {
-  const pending = (await getKV('skips')) || {};
-  const setup = await getSetup();
-  for (const { ruleId, date } of list) {
-    pending[ruleId] = unionDates(pending[ruleId], [date]);
-    const rule = setup.rules.find((r) => r.id === ruleId);
-    if (rule) rule.skipped = unionDates(rule.skipped, [date]);
-  }
-  await setKV('skips', pending);
-  await setKV('setup', setup);
+  await updateKV(['skips', 'setup'], (now) => {
+    const pending = now.skips || {};
+    const setup = now.setup || structuredClone(DEFAULT_SETUP);
+    for (const { ruleId, date } of list) {
+      pending[ruleId] = unionDates(pending[ruleId], [date]);
+      const rule = setup.rules.find((r) => r.id === ruleId);
+      if (rule) rule.skipped = unionDates(rule.skipped, [date]);
+    }
+    return { skips: pending, setup };
+  });
   emitChange('setup');
 }
 
 /** Undo a skip that hasn't reached the sheet yet (used when a delete is undone). */
 export async function removeSkip(ruleId, date) {
-  const pending = (await getKV('skips')) || {};
-  const setup = await getSetup();
-  const rule = setup.rules.find((r) => r.id === ruleId);
-  if (pending[ruleId]) { pending[ruleId] = pending[ruleId].filter((d) => d !== date); if (!pending[ruleId].length) delete pending[ruleId]; }
-  if (rule && rule.skipped) rule.skipped = rule.skipped.filter((d) => d !== date);
-  await setKV('skips', pending);
-  await setKV('setup', setup);
+  await updateKV(['skips', 'setup'], (now) => {
+    const pending = now.skips || {};
+    const setup = now.setup || structuredClone(DEFAULT_SETUP);
+    const rule = setup.rules.find((r) => r.id === ruleId);
+    if (pending[ruleId]) { pending[ruleId] = pending[ruleId].filter((d) => d !== date); if (!pending[ruleId].length) delete pending[ruleId]; }
+    if (rule && rule.skipped) rule.skipped = rule.skipped.filter((d) => d !== date);
+    return { skips: pending, setup };
+  });
   emitChange('setup');
 }
 
 const unionDates = (a, b) => [...new Set([...(a || []), ...(b || [])])].sort();
 
-/** Lay watermarks and skips that haven't reached the sheet yet over the stored setup.
- *  sync.js calls this after replacing the setup with the sheet's copy, which can't
- *  know about a review done while the sync request was in flight. */
-export async function reapplyPending() {
-  const wm = (await getKV('watermarks')) || {};
-  const sk = (await getKV('skips')) || {};
-  if (!Object.keys(wm).length && !Object.keys(sk).length) return;
-  const setup = await getSetup();
+/** `setup` with the watermarks and skips that haven't reached the sheet yet laid over it.
+ *  sync.js uses this when it takes the sheet's copy, which can't know about a review
+ *  done while the sync request was in flight. */
+export function withPending(setup, wm, sk) {
   for (const rule of setup.rules) {
     if (wm[rule.id] && (!rule.lastPosted || rule.lastPosted < wm[rule.id])) rule.lastPosted = wm[rule.id];
     if (sk[rule.id]) rule.skipped = unionDates(rule.skipped, sk[rule.id]);
   }
-  await setKV('setup', setup);
+  return setup;
 }

@@ -21,7 +21,7 @@
 // by what the sheet holds, except entries changed on the phone while the request
 // was in flight (or whose op failed) — those stay dirty for the next sync.
 
-import { getKV, setKV, getSetup, emitChange, rawDB, reapplyPending, snapshotUnsynced, listEntries, DEFAULT_SETUP } from './store.js';
+import { getKV, updateKV, withPending, getSetup, emitChange, rawDB, snapshotUnsynced, listEntries, DEFAULT_SETUP } from './store.js';
 import { validateCloudReply, summarizeCloud, unsyncedTokens } from './cloud.js';
 import { rebaseOntoSheet, setupKeys } from './setup-rebase.js';
 
@@ -132,35 +132,39 @@ async function doSync() {
     return { next, failed, pulled: next.length };
   });
 
-  // setup: take the sheet's, unless edited again while the request was in flight — or unless the
-  // sheet REFUSED our Setup (`setupError`, e.g. a rule whose category is not on its Setup tab).
-  // Then the phone keeps its edits, still pending, so nothing is lost and the next sync retries.
+  // One transaction from the checks to the writes: a Setup saved, or an item posted or skipped,
+  // while the reply is being stored can't be overwritten by it.
   const setupRejected = !!(setup && data.setupError);
-  const metaNow = (await getKV('setupMeta')) || {};
-  if (!setupRejected && (!metaNow.dirty || metaNow.updatedAt === setupMeta.updatedAt)) {
-    if (data.setup) await setKV('setup', data.setup);
-    await setKV('setupMeta', { dirty: false, renames: [] });
-  }
-  await setKV('setupError', setupRejected ? String(data.setupError) : null);
-  if (!setupRejected) await setKV('setupBase', setupKeys(data.setup));
-  // Forget only what this request carried. A review done while it was in flight added
-  // newer watermarks/skips that the reply could not know about: keep those and lay them
-  // back over the setup we just took from the sheet.
   const skipsPersisted = data.recurringApi >= 2;   // an older Code.gs ignores `skips`: keep them on the phone
-  const wmNow = (await getKV('watermarks')) || {};
-  for (const id of Object.keys(watermarks)) if (wmNow[id] && wmNow[id] <= watermarks[id]) delete wmNow[id];
-  await setKV('watermarks', wmNow);
-  if (skipsPersisted) {
-    const skNow = (await getKV('skips')) || {};
-    for (const id of Object.keys(skips)) {
-      skNow[id] = (skNow[id] || []).filter((d) => !skips[id].includes(d));
-      if (!skNow[id].length) delete skNow[id];
+  await updateKV(['setup', 'setupMeta', 'watermarks', 'skips'], (now) => {
+    const out = { setupError: setupRejected ? String(data.setupError) : null, recurringRun: data.recurringRun || null, lastSync: Date.now() };
+    // setup: take the sheet's, unless edited again while the request was in flight — or unless the
+    // sheet REFUSED our Setup (`setupError`, e.g. a rule whose category is not on its Setup tab).
+    // Then the phone keeps its edits, still pending, so nothing is lost and the next sync retries.
+    const metaNow = now.setupMeta || {};
+    let nextSetup = now.setup;
+    if (!setupRejected && (!metaNow.dirty || metaNow.updatedAt === setupMeta.updatedAt)) {
+      if (data.setup) nextSetup = data.setup;
+      out.setupMeta = { dirty: false, renames: [] };
     }
-    await setKV('skips', skNow);
-  }
-  await reapplyPending();
-  await setKV('recurringRun', data.recurringRun || null);
-  await setKV('lastSync', Date.now());
+    if (!setupRejected) out.setupBase = setupKeys(data.setup);
+    // Forget only what this request carried. A review done while it was in flight added
+    // newer watermarks/skips that the reply could not know about: keep those and lay them
+    // back over the setup taken from the sheet.
+    const wm = now.watermarks || {};
+    for (const id of Object.keys(watermarks)) if (wm[id] && wm[id] <= watermarks[id]) delete wm[id];
+    out.watermarks = wm;
+    const sk = now.skips || {};
+    if (skipsPersisted) {
+      for (const id of Object.keys(skips)) {
+        sk[id] = (sk[id] || []).filter((d) => !skips[id].includes(d));
+        if (!sk[id].length) delete sk[id];
+      }
+      out.skips = sk;
+    }
+    if (nextSetup) out.setup = withPending(nextSetup, wm, sk);
+    return out;
+  });
 
   emitChange('sync');
   const runFailed = data.recurringRun && data.recurringRun.ok === false;
