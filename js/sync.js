@@ -12,6 +12,7 @@
 // Response { ok: true, results: [ { id, status: 'ok'|'error', message? } ],
 //            ledger: { Expense: [Row], Income: [Row] },   // Row = { id, date, category, amount, description }
 //            setup: <Setup>, serverTime,
+//            setupError: '' | 'why the sheet refused the Setup we sent',  // entries still synced; Setup stays pending
 //            recurringApi: 2,                              // absent on a Code.gs that predates skips
 //            recurringRun: { at, by, ok, posted, message } | null }   // last menu / daily run
 //        | { error: '...' }
@@ -108,13 +109,17 @@ async function doSync() {
     return { next, failed, pulled: next.length };
   });
 
-  // setup: take the sheet's, unless edited again while the request was in flight
+  // setup: take the sheet's, unless edited again while the request was in flight — or unless the
+  // sheet REFUSED our Setup (`setupError`, e.g. a rule whose category is not on its Setup tab).
+  // Then the phone keeps its edits, still pending, so nothing is lost and the next sync retries.
+  const setupRejected = !!(setup && data.setupError);
   const metaNow = (await getKV('setupMeta')) || {};
-  if (!metaNow.dirty || metaNow.updatedAt === setupMeta.updatedAt) {
+  if (!setupRejected && (!metaNow.dirty || metaNow.updatedAt === setupMeta.updatedAt)) {
     if (data.setup) await setKV('setup', data.setup);
     await setKV('setupMeta', { dirty: false, renames: [] });
   }
-  if (data.setup) {
+  await setKV('setupError', setupRejected ? String(data.setupError) : null);
+  if (data.setup && !setupRejected) {
     await setKV('setupBase', {
       expenseCategories: data.setup.expenseCategories.map((c) => c.name),
       incomeSources: data.setup.incomeSources.map((c) => c.name),
@@ -146,6 +151,7 @@ async function doSync() {
     pushed: ops.length - failed, failed, pulled,
     staleServer: !(data.recurringApi >= 2),
     recurringError: runFailed ? (data.recurringRun.message || 'unknown error') : '',
+    setupError: setupRejected ? String(data.setupError) : '',
   };
 }
 

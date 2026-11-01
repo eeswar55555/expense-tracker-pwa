@@ -17,7 +17,7 @@
 //          groups:            ['Fixed', ...],              // Setup!H5:H8, read-only
 //          rules: [{ id, type, category, amount, frequency, day, start, end,
 //                    description, active, lastPosted,
-//                    skipped: ['YYYY-MM-DD'] }] }          // max 20 (Setup!J5:S24; skipped = Setup!V)
+//                    skipped: ['YYYY-MM-DD'] }] }          // max 20 (Setup!J5:S24; skipped = Setup!W)
 //   lastPosted = every occurrence up to this date is posted or skipped (see recurring.js)
 
 import { uid } from './util.js';

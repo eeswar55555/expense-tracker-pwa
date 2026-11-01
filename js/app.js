@@ -67,7 +67,8 @@ async function runSync() {
   try {
     const r = await syncNow();
     let msg = r.failed ? `Synced, but ${r.failed} item(s) were rejected — see History.` : r.pushed ? `Synced ${r.pushed} change(s).` : 'Up to date with the sheet.';
-    if (r.recurringError) msg += ' The sheet’s automatic recurring posting failed — see Setup.';
+    if (r.setupError) msg += ' The sheet did not accept your Setup changes — see the Setup tab.';
+    else if (r.recurringError) msg += ' The sheet’s automatic recurring posting failed — see Setup.';
     else if (r.staleServer) {
       // an older Code.gs can't remember skipped items or keep unticked ones due: say so once per session
       let shown = true;

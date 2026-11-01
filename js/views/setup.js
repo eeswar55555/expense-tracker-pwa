@@ -11,6 +11,7 @@ let setup = null;
 let entries = [];
 let due = [];
 let runInfo = null;   // how the sheet's last menu / daily "post recurring" run went (from the last sync)
+let setupError = '';  // why the sheet refused our last Setup push ('' = it didn't)
 let rootEl = null;
 
 // --------------------------------------------------------------- sheet host
@@ -57,7 +58,15 @@ async function loadAndRender() {
   entries = await listEntries({ includeDeleted: true });
   due = dueItems(setup, entries);
   runInfo = (await getKV('recurringRun')) || null;
+  setupError = (await getKV('setupError')) || '';
   if (rootEl) rootEl.innerHTML = renderView();
+}
+
+/** The sheet refused the Setup we last sent. The edits are still on this phone, so say why. */
+function renderSetupError() {
+  if (!setupError) return '';
+  return `<div class="card"><div class="rule-warn" role="alert">The sheet did not accept your latest Setup changes: ${esc(setupError)}</div>
+    <div class="hint">Your changes are still saved on this phone. Fix the problem above, then tap Sync again.</div></div>`;
 }
 
 function renderRunStatus() {
@@ -109,6 +118,7 @@ function backfillCount(rule) {
 
 function renderView() {
   return `
+    ${renderSetupError()}
     ${renderEntityCard('expense')}
     ${renderEntityCard('income')}
     ${renderGroupsCard()}

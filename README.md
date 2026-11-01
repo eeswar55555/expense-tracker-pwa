@@ -15,7 +15,7 @@ Personal project, hosted on a personal GitHub Pages account — nothing GEP-rela
 | **Add** | Expense / Income toggle, date (defaults to today, shown DD/MM/YYYY, tap for the calendar, Today/Yesterday chips), category dropdown from Setup, amount (zero, negative and garbage are rejected), optional description. Shows "N recurring due · Review", this month's spend vs budget, and your 5 most recent entries. |
 | **History** | Every entry, by month or all time, filterable by type / category / text. Tap any entry — including ones typed on the PC — to **edit** any field or **delete** it (with Undo). Amber "Pending" = not synced yet; red = the sheet rejected it (with the reason). |
 | **Dashboard** | Month or Year view: income / expenses / net / savings rate vs the previous period, **budget vs actual** per category (with pace for the current month), spending by group, **category breakdown**, income vs target, top expenses, a 12-month trend, **year-over-year** (monthly lines + YTD + per category), and a 6-month **multi-month comparison** table. Tap a category to jump to its entries. |
-| **Setup** | Expense categories (group + monthly budget), income sources (monthly target), groups (read-only), and **recurring transactions**. Mirrors the sheet's Setup tab. Renaming a category renames it on every past entry too. |
+| **Setup** | Expense categories (group + monthly budget), income sources (monthly target), groups (read-only), and **recurring transactions**. Mirrors the sheet's Setup tab. Renaming a category renames it on every past entry too. If the sheet ever refuses a Setup change (say, a recurring rule that uses a deleted category) the tab shows why and your edits stay on the phone until it is fixed. |
 
 ## Recurring transactions
 
