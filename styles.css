@@ -236,6 +236,34 @@ input[aria-invalid="true"] { border-color: var(--bad); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .sheet-head h2 { margin: 0; font-size: 18px; }
 
+/* ------------------------------------------- Settings > Advanced / revert flow */
+
+.advanced { margin-top: 26px; border-top: 1px solid var(--border); padding-top: 4px; }
+.advanced summary {
+  list-style: none; cursor: pointer; display: inline-block;
+  color: var(--muted); font-size: 12px; padding: 12px 4px; min-height: 44px; box-sizing: border-box;
+}
+.advanced summary::-webkit-details-marker { display: none; }
+.advanced summary::after { content: ' ▾'; }
+.advanced[open] summary::after { content: ' ▴'; }
+.advanced-body { padding: 4px 0 8px; }
+.advanced-body .btn { margin-top: 10px; }
+
+.revert-sheet p { font-size: 14px; line-height: 1.45; margin: 10px 0 0; }
+.revert-sheet h2 { color: var(--bad); }
+.revert-lose {
+  margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--bad); background: var(--expense-soft); font-size: 14px;
+}
+.revert-lose.safe { border-color: var(--border); background: var(--card-2); }
+.revert-lose strong { display: block; margin-bottom: 4px; }
+.revert-lose ul { margin: 4px 0 0; padding-left: 20px; }
+.revert-lose li { margin: 2px 0; }
+.revert-status { margin-top: 12px; font-size: 14px; color: var(--text-2); min-height: 20px; }
+.revert-status.err { color: var(--bad); font-weight: 600; }
+.revert-facts { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--card-2); border: 1px solid var(--border); font-size: 14px; }
+.revert-save { margin-top: 10px; }
+
 /* ------------------------------------------------------------------- toast */
 
 .toast {

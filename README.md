@@ -49,6 +49,16 @@ Apps Script README).
 - Setup is merged, not overwritten: a category or rule added on the sheet since your last
   sync is kept; one you deleted on the phone is removed.
 
+## Revert to the sheet's version (Settings > Advanced)
+
+If the phone ever gets into a bad state: ⚙ → **Advanced ▾** (collapsed by default) → **Revert to the
+sheet's version…** replaces everything on the phone with the sheet's latest copy. It asks twice: first
+it lists what will be lost (unsynced entries, Setup edits, recurring choices) and offers to save a copy
+of them as a file; then, after contacting the sheet, it shows what the sheet holds and needs you to type
+**REVERT**. Nothing changes if the sheet can't be reached or its answer looks wrong, anything new that
+appears while the dialog is open cancels the swap, and the Web App URL / secret are kept. The sheet
+itself is never changed by it.
+
 ## One-time setup
 
 1. **Backend** — paste the latest `Code.gs` into the sheet's Apps Script editor and re-deploy
@@ -69,7 +79,8 @@ the new version.
 | `index.html`, `styles.css` | App shell, tab bar, Settings sheet, shared design tokens (light + dark) |
 | `js/app.js` | Router, sync pill, Settings |
 | `js/store.js` | IndexedDB store (entries + Setup), change events, v1 → v2 migration |
-| `js/sync.js` | Two-way sync with `Code.gs` (contract documented at the top) |
+| `js/sync.js` | Two-way sync with `Code.gs` (contract documented at the top); also `peekCloud` / `revertToCloud` |
+| `js/cloud.js`, `js/revert.js` | Revert to the sheet's version: pure rules (validation, what would be lost) and the two-step dialog |
 | `js/recurring.js` | Rule → due dates (mirrors `occurrences_()` in Code.gs) |
 | `js/analytics.js`, `js/charts.js` | Dashboard aggregation (pure) and hand-written SVG charts |
 | `js/util.js` | Dates (DD/MM/YYYY), ₹ formatting, amount validation, escaping |

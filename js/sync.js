@@ -21,7 +21,8 @@
 // by what the sheet holds, except entries changed on the phone while the request
 // was in flight (or whose op failed) — those stay dirty for the next sync.
 
-import { getKV, setKV, getSetup, emitChange, rawDB, reapplyPending } from './store.js';
+import { getKV, setKV, getSetup, emitChange, rawDB, reapplyPending, snapshotUnsynced, listEntries } from './store.js';
+import { validateCloudReply, summarizeCloud, unsyncedTokens } from './cloud.js';
 
 const LS = { url: 'etk.webAppUrl', secret: 'etk.secret' };
 
@@ -35,17 +36,49 @@ export function setConfig(webAppUrl, secret) {
 export const isConfigured = () => { const c = getConfig(); return !!(c.webAppUrl && c.secret); };
 
 let inFlight = null;
+let reverting = false;
 
 /** Run a sync. Resolves to { pushed, failed, pulled } or throws Error(message).
  *  Concurrent calls share one request. */
 export function syncNow() {
+  if (reverting) return Promise.reject(new Error('Reverting to the sheet’s version — try again in a moment.'));
   if (!inFlight) inFlight = doSync().finally(() => { inFlight = null; });
   return inFlight;
 }
 
+const NOT_CONNECTED = 'Not connected — add the Web App URL and secret in Settings.';
+
+/** One round trip to the Apps Script Web App. Returns the reply once it is known to be a usable
+ *  one; throws Error(message-safe-to-show) otherwise. Shared by sync and revert so both read
+ *  the sheet's answers the same way. */
+async function callSheet(cfg, payload) {
+  // text/plain keeps this a CORS "simple request": Apps Script Web Apps can't
+  // answer the OPTIONS preflight that application/json would trigger.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 60000);
+  let data;
+  try {
+    const res = await fetch(cfg.webAppUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ secret: cfg.secret, action: 'sync', ...payload }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+  } catch (err) {
+    throw new Error(err.name === 'AbortError' ? 'Sync timed out — try again.' : 'Could not reach the sheet (offline?).');
+  } finally {
+    clearTimeout(timer);
+  }
+  if (data && data.error) throw new Error(data.error === 'bad secret' ? 'Secret rejected — check Settings.' : 'Sheet error: ' + data.error);
+  if (!data || !data.ok || !data.ledger) throw new Error('Unexpected reply from the sheet — is Code.gs updated and re-deployed?');
+  return data;
+}
+
 async function doSync() {
   const cfg = getConfig();
-  if (!cfg.webAppUrl || !cfg.secret) throw new Error('Not connected — add the Web App URL and secret in Settings.');
+  if (!cfg.webAppUrl || !cfg.secret) throw new Error(NOT_CONNECTED);
 
   const db = await rawDB();
   const all = await getAllRaw(db);
@@ -61,27 +94,7 @@ async function doSync() {
   const skips = (await getKV('skips')) || {};
   const setupBase = setup ? (await getKV('setupBase')) || null : null;
 
-  // text/plain keeps this a CORS "simple request": Apps Script Web Apps can't
-  // answer the OPTIONS preflight that application/json would trigger.
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 60000);
-  let data;
-  try {
-    const res = await fetch(cfg.webAppUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ secret: cfg.secret, action: 'sync', ops, setup, renames: setupMeta.renames || [], setupBase, watermarks, skips }),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    data = await res.json();
-  } catch (err) {
-    throw new Error(err.name === 'AbortError' ? 'Sync timed out — try again.' : 'Could not reach the sheet (offline?).');
-  } finally {
-    clearTimeout(timer);
-  }
-  if (data.error) throw new Error(data.error === 'bad secret' ? 'Secret rejected — check Settings.' : 'Sheet error: ' + data.error);
-  if (!data.ok || !data.ledger) throw new Error('Unexpected reply from the sheet — is Code.gs updated and re-deployed?');
+  const data = await callSheet(cfg, { ops, setup, renames: setupMeta.renames || [], setupBase, watermarks, skips });
 
   const results = new Map((data.results || []).map((r) => [r.id, r]));
 
@@ -178,5 +191,94 @@ function getAllRaw(db) {
     const r = db.transaction('entries', 'readonly').objectStore('entries').getAll();
     r.onsuccess = () => resolve(r.result);
     r.onerror = () => reject(r.error);
+  });
+}
+
+// ------------------------------------------- revert to the sheet's version (Settings > Advanced)
+//
+// Replaces everything on the phone with the sheet's current copy; whatever has not been synced
+// is discarded. Built so that nothing is lost by accident or half-done:
+//   * the sheet's copy is fetched and fully validated BEFORE the phone is touched (any failure,
+//     offline, wrong secret, a reply that looks wrong: nothing changes);
+//   * the swap is ONE IndexedDB transaction over entries + kv — all or nothing;
+//   * inside that transaction the unsynced items are compared with the list the user confirmed
+//     (`expectTokens`, from snapshotUnsynced()); anything NEW since then cancels the swap;
+//   * sync and revert never overlap, and the Web App URL / secret are never touched.
+
+const EMPTY_PULL = { ops: [], setup: null, renames: [], setupBase: null, watermarks: {}, skips: {} };
+
+async function fetchCloud() {
+  const cfg = getConfig();
+  if (!cfg.webAppUrl || !cfg.secret) throw new Error(NOT_CONNECTED);
+  const cloud = validateCloudReply(await callSheet(cfg, EMPTY_PULL));
+  return { cloud, summary: summarizeCloud(cloud) };
+}
+
+/** Look at the sheet's copy without changing anything on the phone: what a revert would give you
+ *  -> { entries, expenses, income, from, to, categories, sources, rules }. */
+export async function peekCloud() {
+  if (reverting) throw new Error('A revert is already running.');
+  return (await fetchCloud()).summary;
+}
+
+/** Replace the phone with the sheet's copy. `expectTokens` = snapshotUnsynced().tokens as shown
+ *  to (and confirmed by) the user. Resolves { applied: true, summary } or { applied: false,
+ *  reason: 'changed' } (nothing was touched); throws on anything else. An error with
+ *  `.committed` set means the swap itself went through but the final check did not match. */
+export async function revertToCloud(expectTokens = []) {
+  if (reverting) throw new Error('A revert is already running.');
+  reverting = true;                                   // from here on syncNow() refuses to start
+  try {
+    if (inFlight) { try { await inFlight; } catch { /* that sync's failure is not ours */ } }
+    const { cloud, summary } = await fetchCloud();
+    const db = await rawDB();
+    const outcome = await applyCloud(db, cloud, new Set(expectTokens));
+    if (!outcome.applied) return { applied: false, reason: outcome.reason };
+    emitChange('sync');
+    const left = (await snapshotUnsynced()).counts.total;
+    const stored = (await listEntries({ includeDeleted: true })).length;
+    if (left !== 0 || stored !== cloud.rows.length) {
+      const err = new Error('The revert went through, but the final check did not match. Tap Sync and look at History to be sure.');
+      err.committed = true;
+      throw err;
+    }
+    return { applied: true, summary };
+  } finally {
+    reverting = false;
+  }
+}
+
+function applyCloud(db, cloud, expected) {
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(['entries', 'kv'], 'readwrite');
+    const es = t.objectStore('entries'), kv = t.objectStore('kv');
+    const rEntries = es.getAll(), rMeta = kv.get('setupMeta'), rWm = kv.get('watermarks'), rSk = kv.get('skips');
+    const val = (r) => (r.result ? r.result.value : undefined);
+    let outcome = { applied: false, reason: 'unknown' };
+
+    rSk.onsuccess = () => {                           // requests finish in the order made: this is the last read
+      const extra = unsyncedTokens(rEntries.result, val(rMeta), val(rWm), val(rSk)).filter((x) => !expected.has(x));
+      if (extra.length) { outcome = { applied: false, reason: 'changed' }; return; }   // writes nothing
+
+      es.clear();
+      for (const row of cloud.rows) es.put(row);
+      const set = (key, value) => kv.put({ key, value });
+      set('setup', cloud.setup);
+      set('setupMeta', { dirty: false, renames: [] });
+      set('setupBase', {
+        expenseCategories: cloud.setup.expenseCategories.map((c) => c.name),
+        incomeSources: cloud.setup.incomeSources.map((c) => c.name),
+        rules: cloud.setup.rules.map((r) => r.id),
+      });
+      set('watermarks', {});
+      set('skips', {});
+      set('setupError', null);
+      set('recurringRun', cloud.recurringRun);
+      set('lastSync', Date.now());
+      outcome = { applied: true };
+    };
+    t.oncomplete = () => resolve(outcome);
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error('This phone’s storage refused the change.'));
   });
 }

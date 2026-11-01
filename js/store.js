@@ -22,6 +22,7 @@
 
 import { uid } from './util.js';
 import { parseOccurrenceId } from './recurring.js';
+import { unsyncedTokens, describeUnsynced } from './cloud.js';
 
 const DB_NAME = 'expense-tracker';
 const DB_VERSION = 2;
@@ -172,6 +173,23 @@ export async function pendingCount() {
   const all = await tx('entries', 'readonly', (t) => reqP(t.objectStore('entries').getAll()));
   const meta = await getKV('setupMeta');
   return all.filter((e) => e.dirty).length + (meta && meta.dirty ? 1 : 0);
+}
+
+/** Everything on this phone the sheet has not seen yet, read in ONE transaction so the picture
+ *  is consistent: { entries (only the unsynced ones), setup, setupMeta, watermarks, skips,
+ *  tokens, counts }. `tokens` is what a revert compares against (see cloud.js). */
+export async function snapshotUnsynced() {
+  const [entries, setup, meta, wm, sk] = await tx(['entries', 'kv'], 'readonly', (t) => {
+    const kv = t.objectStore('kv');
+    const get = (k) => reqP(kv.get(k)).then((r) => (r ? r.value : undefined));
+    return Promise.all([reqP(t.objectStore('entries').getAll()), get('setup'), get('setupMeta'), get('watermarks'), get('skips')]);
+  });
+  const setupMeta = meta || { dirty: false, renames: [] }, watermarks = wm || {}, skips = sk || {};
+  return {
+    entries: entries.filter((e) => e.dirty), setup: setup || null, setupMeta, watermarks, skips,
+    tokens: unsyncedTokens(entries, setupMeta, watermarks, skips),
+    counts: describeUnsynced(entries, setupMeta, watermarks, skips),
+  };
 }
 
 // ---------------------------------------------------------------------- kv

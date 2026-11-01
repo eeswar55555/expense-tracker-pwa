@@ -66,6 +66,15 @@
       <button class="btn btn-secondary" type="button" data-close>Cancel</button>
       <button class="btn btn-primary" type="button" id="saveSettingsBtn">Save &amp; sync</button>
     </div>
+    <!-- Deliberately tucked away: collapsed every time Settings opens, and the action behind it
+         has two confirmations (js/revert.js). -->
+    <details class="advanced" id="advancedBox">
+      <summary>Advanced</summary>
+      <div class="advanced-body">
+        <div class="hint">Replace everything on this phone with the sheet's latest copy. Anything not yet synced is lost.</div>
+        <button class="btn btn-danger btn-sm" type="button" id="revertBtn">Revert to the sheet's version…</button>
+      </div>
+    </details>
   </div>
 </div>
 

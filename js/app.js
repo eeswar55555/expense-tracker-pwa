@@ -11,6 +11,7 @@
 import { toast } from './util.js';
 import { onChange, pendingCount, getKV } from './store.js';
 import { syncNow, getConfig, setConfig, isConfigured } from './sync.js';
+import { openRevertFlow, isRevertOpen } from './revert.js';
 import addView from './views/add.js';
 import historyView from './views/history.js';
 import dashboardView from './views/dashboard.js';
@@ -95,9 +96,10 @@ async function openSettings() {
   document.getElementById('secret').value = cfg.secret;
   const last = await getKV('lastSync');
   document.getElementById('lastSyncInfo').textContent = last ? 'Last synced ' + new Date(last).toLocaleString('en-IN') : 'Never synced from this phone.';
+  document.getElementById('advancedBox').open = false;   // the revert option is never shown by default
   sheet.classList.add('open');
 }
-const closeSettings = () => sheet.classList.remove('open');
+const closeSettings = () => { document.getElementById('advancedBox').open = false; sheet.classList.remove('open'); };
 
 document.getElementById('settingsBtn').addEventListener('click', openSettings);
 sheet.addEventListener('click', (e) => { if (e.target === sheet || e.target.closest('[data-close]')) closeSettings(); });
@@ -109,7 +111,8 @@ document.getElementById('saveSettingsBtn').addEventListener('click', () => {
   closeSettings();
   if (url && secret) runSync();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
+document.getElementById('revertBtn').addEventListener('click', () => openRevertFlow({ onDone: closeSettings }));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !isRevertOpen()) closeSettings(); });
 
 // -------------------------------------------------------------------- init
 
