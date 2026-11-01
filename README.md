@@ -59,6 +59,36 @@ of them as a file; then, after contacting the sheet, it shows what the sheet hol
 appears while the dialog is open cancels the swap, and the Web App URL / secret are kept. The sheet
 itself is never changed by it.
 
+## Styles (Settings > Appearance)
+
+⚙ → **Appearance**: swipe the row of live previews and tap one. It applies at once and is remembered
+on this phone. Styles: **Classic** (the original; follows the phone's light/dark mode), **Porcelain**,
+**Paper**, **Sage**, **Midnight** (true black for OLED), **Bento**, **Lumen**, **Glass**, **Aurora**,
+**Gilded** and **Teams** (Porcelain, Bento, Lumen, Glass, Aurora and Gilded come from QuickNotes; Teams
+is its dark Classic). "Flat" styles use no blur at all and are the fastest; "Frosted" ones blur only the
+header and the tab bar.
+
+**How it works** (the same three layers as QuickNotes):
+1. `styles.css` starts with the **token contract** — every colour, radius, surface, chrome and type
+   choice as a CSS custom property. Those values are Classic, and the fallback for anything a style
+   doesn't set.
+2. The rest of `styles.css` and `css/*.css` use **tokens only** (no colour literals — a test enforces it).
+3. Each style is one file, `themes/<id>.css`: a `[data-style="<id>"] { --token: value; }` block.
+
+**To add a style:**
+1. `js/themes.js` → add `{ id, label, tagline, fx: 'flat' | 'frosted' }` to `STYLES`;
+2. `themes/<id>.css` → copy the closest style and change the values;
+3. `sw.js` → add `'./themes/<id>.css'` to `SHELL` and bump `CACHE`.
+
+The picker, its preview, saving and the status-bar colour follow automatically. `test/themes.test.cjs`
+fails if a step is missing, a token name is mistyped or a selector isn't scoped; `tools/e2e-themes.js`
+applies every style in Chrome and checks contrast, layout and the low-latency rules.
+
+**Low-latency rules:** at startup only the chosen style's file is loaded (it blocks first paint, so
+there's no flash of Classic); the other styles load only when the picker opens. Blur is allowed only on
+the header and tab bar (`--chrome-filter`), the page backdrop is one fixed layer, and nothing animates in
+a loop.
+
 ## One-time setup
 
 1. **Backend** — paste the latest `Code.gs` into the sheet's Apps Script editor and re-deploy
@@ -76,7 +106,9 @@ the new version.
 
 | Path | Purpose |
 |---|---|
-| `index.html`, `styles.css` | App shell, tab bar, Settings sheet, shared design tokens (light + dark) |
+| `index.html`, `styles.css` | App shell, tab bar, Settings sheet; the style token contract (= Classic, light + dark) |
+| `js/themes.js`, `themes/*.css` | The style registry + loader, and one token file per style |
+| `js/style-picker.js`, `css/appearance.css` | Settings > Appearance: the picker and its live miniatures |
 | `js/app.js` | Router, sync pill, Settings |
 | `js/store.js` | IndexedDB store (entries + Setup), change events, v1 → v2 migration |
 | `js/sync.js` | Two-way sync with `Code.gs` (contract documented at the top); also `peekCloud` / `revertToCloud` |
@@ -96,4 +128,7 @@ node ../tools/shot.mjs "http://localhost:8765/index.html?seed#dashboard" C:/tmp/
 cd ../google-sheets-mcp/apps-script/test && TZ=Asia/Kolkata node --test        # Code.gs unit tests
 TZ=Asia/Kolkata node e2e-server.cjs                                # fake Web App on :8766 running the real Code.gs
 node ../tools/shot.mjs "http://localhost:8765/index.html#history" C:/tmp/e.png --eval "$(cat ../tools/e2e-sync.js)"
+node ../tools/shot.mjs "http://localhost:8765/?seed&style=midnight" C:/tmp/t.png --wait 3000 \
+     --eval-file ../tools/e2e-themes.js --eval2-file ../tools/e2e-themes.js [--dark]   # every style
+node ../tools/shot.mjs "http://localhost:8765/?seed&style=porcelain#dashboard" C:/tmp/p.png   # preview one style (not saved)
 ```

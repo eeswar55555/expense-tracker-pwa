@@ -29,7 +29,7 @@
 
 .month-strip { display: flex; gap: 10px; }
 .month-strip .tile {
-  flex: 1; background: var(--card-2); border-radius: 12px; padding: 12px; text-align: center;
+  flex: 1; background: var(--tile-bg); border-radius: var(--radius-inner); padding: 12px; text-align: center;
 }
 .month-strip .tile .n { font-size: 17px; font-weight: 800; }
 .month-strip .tile .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }

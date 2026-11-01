@@ -1,0 +1,87 @@
+/* Bento — cream tiles on warm oat, espresso ink, clay accent (from QuickNotes).
+   Cards are translucent over a soft static gradient (no blur on cards); only the bars frost. */
+[data-style="bento"] {
+  color-scheme: light;
+
+  --bg: #f3eee4;
+  --card: #fdfaf4;            /* solid twin of --card-bg over the oat page */
+  --card-2: #f1ebdf;
+  --text: #2b2520;
+  --text-2: #5a5148;
+  --muted: #6c6355;
+  --border: #e4dccd;
+  --ink: #4a3b2e;
+  --on-ink: #fffaf3;
+  --amber: #d08a2c;
+  --amber-soft: #f8ecd6;
+  --income: #24698f;
+  --income-soft: #e2ecf1;
+  --expense: #b9442c;
+  --expense-soft: #f7e5de;
+  --on-series: #ffffff;
+  --good: #26784c;
+  --warn: #9a5c0d;
+  --bad: #c0392b;
+  --focus: #a9471c;
+  --heat: #a9471c;
+  --theme-color: #f3eee4;
+
+  --page-bg:
+    radial-gradient(900px 520px at 6% -8%, rgba(243, 201, 160, .55), transparent 62%),
+    radial-gradient(820px 600px at 104% 4%, rgba(203, 222, 198, .50), transparent 60%),
+    radial-gradient(900px 700px at 42% 118%, rgba(225, 211, 236, .38), transparent 62%),
+    #f3eee4;
+
+  --radius: 20px;
+  --radius-inner: 14px;
+  --radius-field: 10px;
+  --radius-btn: 12px;
+  --radius-chip: 10px;
+  --radius-seg: 12px;
+  --radius-sheet: 22px;
+
+  --shadow: 0 1px 2px rgba(76, 56, 28, .10);
+  --card-bg: rgba(255, 253, 249, .78);
+  --card-border: 1px solid rgba(104, 84, 56, .14);
+  --card-shadow: 0 1px 1px rgba(76, 56, 28, .05), 0 10px 26px -8px rgba(76, 56, 28, .15);
+  --tile-bg: rgba(241, 235, 222, .7);
+  --field-bg: #fffdf9;
+  --field-border: rgba(104, 84, 56, .42);
+  --seg-bg: rgba(232, 224, 207, .6);
+  --seg-border: 1px solid rgba(104, 84, 56, .14);
+  --seg-active-bg: #fffdf8;
+  --seg-active-shadow: 0 1px 2px rgba(76, 56, 28, .12);
+  --chip-bg: #fffdf8;
+  --chip-border: rgba(104, 84, 56, .26);
+  --chip-active-bg: rgba(169, 71, 28, .13);
+  --chip-active-border: rgba(169, 71, 28, .45);
+  --chip-active-color: #8a3a14;
+
+  --btn-primary-bg: #a9471c;
+  --btn-primary-color: #fffaf3;
+  --btn-primary-shadow: 0 1px 2px rgba(76, 56, 28, .18), 0 6px 14px -6px rgba(169, 71, 28, .45);
+  --btn-secondary-bg: #fffdf8;
+  --btn-secondary-border: rgba(104, 84, 56, .26);
+
+  --header-bg: rgba(248, 244, 236, .78);
+  --tabbar-bg: rgba(248, 244, 236, .84);
+  --chrome-border: 1px solid rgba(104, 84, 56, .14);
+  --chrome-filter: blur(14px) saturate(150%);
+  --tab-color: #6c6355;
+  --tab-active-color: #8a3a14;
+  --tab-active-bg: rgba(169, 71, 28, .12);
+
+  --sheet-bg: #f8f4ec;
+  --sheet-shadow: 0 -10px 34px rgba(76, 56, 28, .10);
+  --scrim: rgba(43, 37, 32, .35);
+  --toast-bg: #2f2822;
+  --toast-color: #fbf6ec;
+  --toast-action: #f0b37e;
+
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --display-weight: 650;
+  --display-tracking: -.2px;
+  --header-title-size: 20px;
+  --title-tracking: .7px;
+}

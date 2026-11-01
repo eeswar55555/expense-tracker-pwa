@@ -3,7 +3,7 @@
 // falling back to the cache when offline. Cross-origin calls (the Apps Script
 // sync endpoint) are never intercepted or cached.
 
-const CACHE = 'expense-tracker-v5';
+const CACHE = 'expense-tracker-v6';
 const SHELL = [
   './',
   './index.html',
@@ -15,7 +15,21 @@ const SHELL = [
   './css/history.css',
   './css/dashboard.css',
   './css/setup.css',
+  './css/appearance.css',
+  // one per style in js/themes.js (Classic is built into styles.css)
+  './themes/porcelain.css',
+  './themes/paper.css',
+  './themes/sage.css',
+  './themes/midnight.css',
+  './themes/bento.css',
+  './themes/lumen.css',
+  './themes/glass.css',
+  './themes/aurora.css',
+  './themes/gilded.css',
+  './themes/teams.css',
   './js/app.js',
+  './js/themes.js',
+  './js/style-picker.js',
   './js/util.js',
   './js/store.js',
   './js/sync.js',

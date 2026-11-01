@@ -1,0 +1,57 @@
+/* Sage — fresh white with calm forest-green accents. Flat (no blur, no gradients). Token overrides only. */
+[data-style="sage"] {
+  color-scheme: light;
+
+  --bg: #f3f6f3;
+  --card: #ffffff;
+  --card-2: #eef3ef;
+  --text: #1f2a24;
+  --text-2: #4a5a50;
+  --muted: #64736a;
+  --border: #dde6df;
+  --ink: #2f6b4f;
+  --on-ink: #ffffff;
+  --amber: #d99a2b;
+  --amber-soft: #fbf0db;
+  --income: #1f6f9a;
+  --income-soft: #e2eef5;
+  --expense: #b9472f;
+  --expense-soft: #f8e6e1;
+  --on-series: #ffffff;
+  --good: #2f7a52;
+  --warn: #9c600c;
+  --bad: #c0392b;
+  --focus: #2f6b4f;
+  --theme-color: #f3f6f3;
+
+  --radius: 16px;
+  --radius-inner: 12px;
+  --radius-field: 12px;
+  --radius-btn: 12px;
+  --radius-chip: 999px;
+  --radius-seg: 12px;
+  --radius-sheet: 20px;
+
+  --shadow: 0 1px 2px rgba(31, 42, 36, .05), 0 2px 8px rgba(31, 42, 36, .04);
+  --card-border: 1px solid #e3ebe5;
+  --tile-bg: #f1f6f2;
+  --field-bg: #f7faf7;
+  --field-border: #cddad1;
+  --chip-active-bg: #2f6b4f;
+
+  --btn-primary-bg: #2f6b4f;
+  --btn-primary-shadow: 0 1px 2px rgba(31, 42, 36, .12);
+
+  --header-bg: #f3f6f3;
+  --tabbar-bg: #ffffff;
+  --chrome-border: 1px solid #dde6df;
+  --tab-color: #64736a;
+  --tab-active-color: #2f6b4f;
+  --tab-active-bg: #e1eee5;
+
+  --sheet-bg: #ffffff;
+  --scrim: rgba(20, 32, 26, .4);
+  --toast-bg: #1f2a24;
+  --toast-color: #f3f6f3;
+  --toast-action: #9fd8b5;
+}

@@ -1,0 +1,81 @@
+/* Glass — frosted liquid glass over ambient violet light (from QuickNotes).
+   The page light is a smooth static gradient, so cards stay crisp without a blur of their own;
+   only the header and tab bar frost. Token overrides only. */
+[data-style="glass"] {
+  color-scheme: dark;
+
+  --bg: #0d0c16;
+  --card: #1c1a30;            /* solid twin of --card-bg over the page */
+  --card-2: #232139;
+  --text: #f7f8ff;
+  --text-2: #d4d6ee;
+  --muted: #a9abcc;
+  --border: rgba(255, 255, 255, .14);
+  --ink: #b3b8ff;
+  --on-ink: #0d0c16;
+  --amber: #ffc36b;
+  --amber-soft: rgba(255, 195, 107, .14);
+  --income: #8cc8ff;
+  --income-soft: rgba(108, 184, 255, .14);
+  --expense: #ffa293;
+  --expense-soft: rgba(255, 138, 122, .14);
+  --on-series: #0d0c16;
+  --good: #7be07f;
+  --warn: #ffc36b;
+  --bad: #ff6b7a;
+  --focus: #c4c8ff;
+  --theme-color: #0d0c16;
+
+  --page-bg:
+    radial-gradient(1100px 620px at 12% -8%, rgba(123, 131, 235, .30), transparent 60%),
+    radial-gradient(950px 700px at 108% 6%, rgba(94, 199, 235, .22), transparent 55%),
+    radial-gradient(900px 820px at 46% 118%, rgba(215, 70, 120, .16), transparent 60%),
+    #0a0912;
+
+  --radius: 22px;
+  --radius-inner: 16px;
+  --radius-field: 12px;
+  --radius-btn: 14px;
+  --radius-chip: 999px;
+  --radius-seg: 14px;
+  --radius-sheet: 26px;
+
+  --shadow: 0 4px 14px rgba(0, 0, 0, .3);
+  --card-bg: rgba(255, 255, 255, .06);
+  --card-border: 1px solid rgba(255, 255, 255, .16);
+  --card-shadow: 0 10px 40px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .12);
+  --tile-bg: rgba(255, 255, 255, .07);
+  --field-bg: rgba(255, 255, 255, .07);
+  --field-border: rgba(255, 255, 255, .24);
+  --seg-bg: rgba(255, 255, 255, .06);
+  --seg-border: 1px solid rgba(255, 255, 255, .12);
+  --seg-active-bg: rgba(255, 255, 255, .13);
+  --seg-active-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+  --chip-bg: rgba(255, 255, 255, .06);
+  --chip-border: rgba(255, 255, 255, .18);
+  --chip-active-bg: linear-gradient(150deg, rgba(255, 255, 255, .22), rgba(123, 131, 235, .5));
+  --chip-active-border: rgba(255, 255, 255, .3);
+  --chip-active-color: #ffffff;
+
+  --btn-primary-bg: linear-gradient(150deg, #6a63d8, #4f4cc0);
+  --btn-primary-color: #ffffff;
+  --btn-primary-border: rgba(255, 255, 255, .22);
+  --btn-primary-shadow: 0 4px 18px rgba(123, 131, 235, .28), inset 0 1px 0 rgba(255, 255, 255, .3);
+  --btn-secondary-bg: rgba(255, 255, 255, .05);
+  --btn-secondary-border: rgba(255, 255, 255, .2);
+
+  --header-bg: rgba(16, 14, 30, .55);
+  --tabbar-bg: rgba(20, 18, 36, .6);
+  --chrome-border: 1px solid rgba(255, 255, 255, .1);
+  --chrome-filter: blur(22px) saturate(180%);
+  --tab-color: #a3a5c8;
+  --tab-active-color: #ffffff;
+  --tab-active-bg: linear-gradient(150deg, rgba(255, 255, 255, .2), rgba(123, 131, 235, .4));
+
+  --sheet-bg: #16142a;
+  --sheet-shadow: 0 -10px 40px rgba(0, 0, 0, .35);
+  --scrim: rgba(5, 4, 12, .55);
+  --toast-bg: #f5f6ff;
+  --toast-color: #14122a;
+  --toast-action: #4b44c9;
+}

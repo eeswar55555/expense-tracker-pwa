@@ -1,0 +1,95 @@
+/* Porcelain — soft white, frosted bars, serif titles over clean sans (from QuickNotes).
+   Token overrides only; the contract is at the top of styles.css. */
+[data-style="porcelain"] {
+  color-scheme: light;
+
+  /* --- colour: pure white cards on a cool, barely-there grey --- */
+  --bg: #f2f3f7;
+  --card: #ffffff;
+  --card-2: #f1f2f6;
+  --text: #1d1d1f;
+  --text-2: #4a4e59;
+  --muted: #666a76;
+  --border: #e4e6ec;
+  --ink: #0066cc;
+  --on-ink: #ffffff;
+  --amber: #e8a33d;
+  --amber-soft: #fff4e2;
+  --income: #1f6fa8;
+  --income-soft: #e5eff8;
+  --expense: #c9372c;
+  --expense-soft: #fceae8;
+  --on-series: #ffffff;
+  --good: #23803a;
+  --warn: #a95c00;
+  --bad: #d70015;
+  --focus: #0071e3;
+  --theme-color: #f4f5f8;
+
+  --page-bg:
+    radial-gradient(900px 480px at 82% -12%, rgba(205, 220, 246, .55), transparent 62%),
+    linear-gradient(180deg, #fbfbfd 0%, #eceef3 100%);
+
+  /* --- shape: soft capsules, generous cards --- */
+  --radius: 22px;
+  --radius-inner: 16px;
+  --radius-field: 12px;
+  --radius-btn: 999px;
+  --radius-chip: 999px;
+  --radius-seg: 999px;
+  --radius-sheet: 28px;
+
+  /* --- surfaces: layered, cool-tinted shadows --- */
+  --shadow: 0 1px 2px rgba(24, 34, 64, .06), 0 4px 12px rgba(24, 34, 64, .06);
+  --card-border: 1px solid rgba(28, 38, 66, .07);
+  --card-shadow: 0 1px 2px rgba(24, 34, 64, .05), 0 6px 18px rgba(24, 34, 64, .05);
+  --tile-bg: #f4f5f8;
+  --field-bg: #f4f5f8;
+  --field-border: rgba(28, 38, 66, .16);
+  --seg-bg: rgba(112, 122, 150, .14);
+  --seg-border: 1px solid transparent;
+  --seg-active-bg: #ffffff;
+  --seg-active-shadow: 0 1px 2px rgba(24, 34, 64, .12), 0 3px 10px rgba(24, 34, 64, .08);
+  --chip-bg: #f1f2f6;
+  --chip-border: transparent;
+  --chip-active-bg: #1d1d1f;
+  --chip-active-border: #1d1d1f;
+  --chip-active-color: #ffffff;
+
+  /* --- buttons: Apple blue pill; secondary is a tinted grey capsule --- */
+  --btn-primary-bg: #0068d6;
+  --btn-primary-color: #ffffff;
+  --btn-primary-shadow: 0 1px 2px rgba(0, 80, 170, .2), 0 4px 12px rgba(0, 104, 214, .18);
+  --btn-secondary-bg: rgba(112, 122, 150, .12);
+  --btn-secondary-border: transparent;
+
+  /* --- chrome: frosted header + tab bar (the only blur) --- */
+  --header-bg: rgba(246, 247, 250, .76);
+  --tabbar-bg: rgba(255, 255, 255, .78);
+  --chrome-border: 1px solid rgba(28, 38, 66, .08);
+  --chrome-filter: blur(20px) saturate(180%);
+  --tab-color: #6a6e7a;
+  --tab-active-color: #0058b8;
+  --tab-active-bg: rgba(0, 113, 227, .12);
+
+  /* --- overlays --- */
+  --sheet-bg: #ffffff;
+  --sheet-shadow: 0 -10px 40px rgba(24, 34, 64, .14);
+  --scrim: rgba(28, 32, 48, .32);
+  --toast-bg: #1d1d1f;
+  --toast-color: #ffffff;
+  --toast-action: #6cb0ff;
+
+  /* --- type: serif display over SF / system sans --- */
+  --font: -apple-system, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-display: "New York", "Iowan Old Style", Georgia, "Noto Serif", "Times New Roman", serif;
+  --display-weight: 400;
+  --display-tracking: -.2px;
+  --header-title-size: 23px;
+  --title-font: var(--font-display);
+  --title-size: 18px;
+  --title-weight: 400;
+  --title-tracking: -.1px;
+  --title-transform: none;
+  --title-color: var(--text);
+}

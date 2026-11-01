@@ -4,8 +4,8 @@
 
 .month-nav { display: flex; align-items: center; gap: 8px; }
 .month-nav .month-label { flex: 1; text-align: center; font-weight: 700; }
-.month-nav .icon-btn { border: 1px solid var(--border); border-radius: 10px; }
-.month-nav #histAllTime[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.month-nav .icon-btn { border: 1px solid var(--chip-border); border-radius: var(--radius-field); }
+.month-nav #histAllTime[aria-pressed="true"] { background: var(--chip-active-bg); color: var(--chip-active-color); border-color: var(--chip-active-border); }
 
 .hist-row-filters { gap: 8px; }
 

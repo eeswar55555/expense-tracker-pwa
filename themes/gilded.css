@@ -1,0 +1,93 @@
+/* Gilded — executive black, platinum and gold, Swiss precision (from QuickNotes).
+   Near-square corners, hairline gold rules, spaced small-caps type; gold is a detail, never a glow.
+   Token overrides, plus scoped rules for the uppercase chrome type (no token for that). */
+[data-style="gilded"] {
+  color-scheme: dark;
+
+  --x-gold: #d6b66c;
+  --x-gold-hi: #ecd493;
+
+  --bg: #050506;
+  --card: #0d0d11;
+  --card-2: #16161c;
+  --text: #f3f2ef;
+  --text-2: #c5c8ce;
+  --muted: #9a9ea7;
+  --border: #26252a;
+  --ink: var(--x-gold);
+  --on-ink: #0d0b06;
+  --amber: var(--x-gold-hi);
+  --amber-soft: rgba(214, 182, 108, .12);
+  --income: #8fb8de;
+  --income-soft: rgba(143, 184, 222, .12);
+  --expense: #e8907a;
+  --expense-soft: rgba(232, 144, 122, .12);
+  --on-series: #0d0b06;
+  --good: #9ccf8a;
+  --warn: #e0b04a;
+  --bad: #ee7a85;
+  --focus: var(--x-gold-hi);
+  --theme-color: #050506;
+
+  --page-bg:
+    radial-gradient(760px 300px at 50% -120px, rgba(214, 182, 108, .12), transparent 72%),
+    #050506;
+
+  --radius: 2px;
+  --radius-inner: 2px;
+  --radius-field: 1px;
+  --radius-btn: 2px;
+  --radius-chip: 2px;
+  --radius-seg: 2px;
+  --radius-sheet: 0px;
+
+  --shadow: none;
+  --card-border: 1px solid rgba(214, 182, 108, .36);
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+  --tile-bg: #121216;
+  --field-bg: #08080b;
+  --field-border: #6a665d;
+  --seg-bg: transparent;
+  --seg-border: 1px solid rgba(214, 220, 232, .25);
+  --seg-active-bg: rgba(214, 182, 108, .14);
+  --seg-active-shadow: none;
+  --chip-bg: transparent;
+  --chip-border: rgba(214, 220, 232, .4);
+  --chip-active-bg: var(--x-gold);
+  --chip-active-border: var(--x-gold);
+  --chip-active-color: #0d0b06;
+
+  --btn-primary-bg: rgba(214, 182, 108, .12);
+  --btn-primary-color: var(--x-gold-hi);
+  --btn-primary-border: rgba(214, 182, 108, .6);
+  --btn-secondary-border: rgba(214, 220, 232, .4);
+
+  --header-bg: rgba(8, 8, 11, .86);
+  --tabbar-bg: rgba(8, 8, 11, .9);
+  --chrome-border: 1px solid rgba(214, 182, 108, .3);
+  --chrome-filter: blur(12px);
+  --tab-color: #9a9ea7;
+  --tab-active-color: var(--x-gold-hi);
+  --tab-indicator: var(--x-gold);
+
+  --sheet-bg: #0b0b0e;
+  --scrim: rgba(0, 0, 0, .65);
+  --toast-bg: #16150f;
+  --toast-color: #f3f2ef;
+  --toast-border: rgba(214, 182, 108, .5);
+  --toast-action: var(--x-gold-hi);
+
+  --font: "Helvetica Neue", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-display: var(--font);
+  --display-weight: 500;
+  --display-tracking: 3px;
+  --header-title-size: 15px;
+  --title-size: 11px;
+  --title-weight: 600;
+  --title-tracking: 2.4px;
+  --title-color: var(--x-gold);
+}
+
+/* small caps chrome: the title and tab labels */
+[data-style="gilded"] .app-header h1 { text-transform: uppercase; }
+[data-style="gilded"] .tabbar button { text-transform: uppercase; letter-spacing: 1.2px; font-size: 10px; }

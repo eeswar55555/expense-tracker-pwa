@@ -1,4 +1,4 @@
-// App shell: tab routing, the sync pill, the Settings sheet.
+// App shell: tab routing, the sync pill, the Settings sheet (incl. the style picker).
 //
 // View contract (js/views/*.js default export):
 //   { title, mount(root, app), show(params), refresh() }
@@ -12,6 +12,8 @@ import { toast } from './util.js';
 import { onChange, pendingCount, getKV } from './store.js';
 import { syncNow, getConfig, setConfig, isConfigured } from './sync.js';
 import { openRevertFlow, isRevertOpen } from './revert.js';
+import { initStyle } from './themes.js';
+import { mountStylePicker, refreshStylePicker } from './style-picker.js';
 import addView from './views/add.js';
 import historyView from './views/history.js';
 import dashboardView from './views/dashboard.js';
@@ -98,6 +100,7 @@ async function openSettings() {
   document.getElementById('lastSyncInfo').textContent = last ? 'Last synced ' + new Date(last).toLocaleString('en-IN') : 'Never synced from this phone.';
   document.getElementById('advancedBox').open = false;   // the revert option is never shown by default
   sheet.classList.add('open');
+  refreshStylePicker();
 }
 const closeSettings = () => { document.getElementById('advancedBox').open = false; sheet.classList.remove('open'); };
 
@@ -116,6 +119,8 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !isRever
 
 // -------------------------------------------------------------------- init
 
+initStyle();
+mountStylePicker(document.getElementById('styleGallery'));
 document.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.addEventListener('click', () => navigate(b.dataset.tab)));
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

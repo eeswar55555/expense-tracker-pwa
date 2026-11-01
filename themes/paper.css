@@ -1,0 +1,76 @@
+/* Paper — ink on paper: flat, high contrast, sharp corners, serif title. No blur, no gradients:
+   the cheapest style to draw. Token overrides only. */
+[data-style="paper"] {
+  color-scheme: light;
+
+  --bg: #f7f5ef;
+  --card: #fffefa;
+  --card-2: #f1eee5;
+  --text: #1a1a1a;
+  --text-2: #3d3d3d;
+  --muted: #66625a;
+  --border: #ddd7c9;
+  --ink: #1a1a1a;
+  --on-ink: #fffefa;
+  --amber: #c9952a;
+  --amber-soft: #f7eed8;
+  --income: #1d5f8a;
+  --income-soft: #e3ecf3;
+  --expense: #b03a24;
+  --expense-soft: #f6e4df;
+  --on-series: #ffffff;
+  --good: #2d6a4f;
+  --warn: #8a5a00;
+  --bad: #b3261e;
+  --focus: #1a1a1a;
+  --theme-color: #f7f5ef;
+
+  --radius: 4px;
+  --radius-inner: 3px;
+  --radius-field: 2px;
+  --radius-btn: 2px;
+  --radius-chip: 2px;
+  --radius-seg: 3px;
+  --radius-sheet: 6px;
+
+  --shadow: none;
+  --card-border: 1px solid #cfc9ba;
+  --card-shadow: none;
+  --tile-bg: #f4f1e8;
+  --field-bg: #fffefa;
+  --field-border: #8f8a7e;
+  --seg-bg: transparent;
+  --seg-border: 1px solid #8f8a7e;
+  --seg-active-bg: #e9e5d9;
+  --seg-active-shadow: none;
+  --chip-bg: transparent;
+  --chip-border: #8f8a7e;
+  --chip-active-bg: #1a1a1a;
+  --chip-active-border: #1a1a1a;
+  --chip-active-color: #fffefa;
+
+  --btn-primary-bg: #1a1a1a;
+  --btn-primary-color: #fffefa;
+  --btn-secondary-border: #1a1a1a;
+
+  --header-bg: #f7f5ef;
+  --tabbar-bg: #f7f5ef;
+  --chrome-border: 1px solid #1a1a1a;
+  --tab-color: #66625a;
+  --tab-active-color: #1a1a1a;
+  --tab-indicator: #1a1a1a;
+
+  --sheet-bg: #fffefa;
+  --scrim: rgba(26, 26, 26, .4);
+  --toast-bg: #1a1a1a;
+  --toast-color: #fffefa;
+  --toast-action: #f2c94c;
+
+  --font-display: Georgia, "Noto Serif", "Times New Roman", serif;
+  --display-weight: 700;
+  --display-tracking: 0px;
+  --header-title-size: 21px;
+  --title-size: 12px;
+  --title-tracking: 1.2px;
+  --title-color: var(--text);
+}

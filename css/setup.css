@@ -14,8 +14,8 @@
 .setup-row-meta { font-size: 12.5px; color: var(--muted); }
 .setup-row-actions { display: flex; flex-direction: row; gap: 6px; flex: none; }
 .row-move {
-  min-width: 40px; min-height: 44px; border: 1px solid var(--border); background: var(--card);
-  border-radius: 8px; color: var(--text-2); font-size: 12px;
+  min-width: 40px; min-height: 44px; border: 1px solid var(--chip-border); background: var(--chip-bg);
+  border-radius: var(--radius-field); color: var(--text-2); font-size: 12px;
   display: flex; align-items: center; justify-content: center;
 }
 .row-move:disabled { opacity: .35; }
@@ -37,13 +37,13 @@
 .due-banner {
   display: block; width: 100%; text-align: left; min-height: 44px;
   background: var(--amber-soft); border: 1px solid var(--amber); color: var(--warn);
-  font-weight: 700; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+  font-weight: 700; border-radius: var(--radius-field); padding: 10px 12px; margin-bottom: 12px;
 }
 
 .rule-card {
   display: flex; align-items: flex-start; gap: 10px;
-  border: 1px solid var(--border); border-radius: 12px; padding: 12px;
-  margin-bottom: 10px; background: var(--card-2);
+  border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 12px;
+  margin-bottom: 10px; background: var(--tile-bg);
 }
 .rule-card-main { flex: 1; min-width: 0; background: none; border: none; text-align: left; padding: 0; display: block; }
 .rule-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; margin-bottom: 4px; }
@@ -51,7 +51,7 @@
 .rule-warn { color: var(--bad); font-size: 12.5px; margin-top: 4px; font-weight: 700; }
 .rule-card .switch { margin-top: 2px; }
 
-.rule-preview { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--text-2); margin-top: 14px; }
+.rule-preview { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-field); padding: 10px 12px; font-size: 13px; color: var(--text-2); margin-top: 14px; }
 
 /* ----------------------------------------------------------- toggle switch */
 
@@ -70,7 +70,7 @@
 
 /* --------------------------------------------------------- due review sheet */
 
-.due-list { max-height: 48vh; overflow-y: auto; margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; }
+.due-list { max-height: 48vh; overflow-y: auto; margin: 10px 0; border: 1px solid var(--border); border-radius: var(--radius-field); }
 .due-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); min-height: 44px; }
 .due-row:last-child { border-bottom: none; }
 .due-row input[type="checkbox"] { width: 22px; height: 22px; margin-top: 9px; accent-color: var(--ink); flex: none; }

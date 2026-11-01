@@ -4,9 +4,10 @@
 // equivalents. See the view contract in app.js's header comment.
 //
 // Color note (dataviz skill): income/expense use the app-wide --income/--expense
-// tokens (blue #1f73a0 / coral #c4452f light, #3d93cf / #e0654f dark, set in
+// tokens (Classic: blue #1f73a0 / coral #c4452f light, #3d93cf / #e0654f dark, set in
 // styles.css). That pair passes scripts/validate_palette.js in both modes
-// (CVD ΔE ≥ 16, normal-vision ΔE ≥ 26, ≥ 3:1 on the card). Charts still add
+// (CVD ΔE ≥ 16, normal-vision ΔE ≥ 26, ≥ 3:1 on the card); every other style keeps a
+// blue / coral pair (themes/*.css, contrast-checked by tools/e2e-themes.js). Charts still add
 // secondary encoding: fixed income-then-expense order, a text legend, direct
 // labels/tooltips, and status rows that pair an icon + text with the color.
 

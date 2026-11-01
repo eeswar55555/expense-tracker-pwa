@@ -1,0 +1,100 @@
+/* Lumen — pearl and graphite under a soft blue-violet glow, frosted floating tab bar (from QuickNotes).
+   Token overrides, plus one scoped rule: the floating bar sits above the phone's home indicator. */
+[data-style="lumen"] {
+  color-scheme: light;
+
+  --bg: #eceef7;
+  --card: #f9f9fd;            /* solid twin of --card-bg */
+  --card-2: #f0f1fa;
+  --text: #1a1b21;
+  --text-2: #444757;
+  --muted: #5c6073;
+  --border: #e1e3ef;
+  --ink: #4a42d6;
+  --on-ink: #ffffff;
+  --amber: #e09b2d;
+  --amber-soft: #fbf0dc;
+  --income: #1f6fa0;
+  --income-soft: #e2edf6;
+  --expense: #b63b26;
+  --expense-soft: #fbe7e3;
+  --on-series: #ffffff;
+  --good: #1d8457;
+  --warn: #9e600a;
+  --bad: #d3304a;
+  --focus: #6557ee;
+  --theme-color: #eef0f8;
+
+  --page-bg:
+    radial-gradient(900px 600px at 4% -10%, rgba(92, 134, 255, .45), transparent 64%),
+    radial-gradient(800px 560px at 104% 0%, rgba(166, 120, 255, .40), transparent 62%),
+    radial-gradient(1000px 680px at 74% 116%, rgba(96, 196, 255, .40), transparent 64%),
+    linear-gradient(180deg, #f3f4fa 0%, #e6e9f5 100%);
+
+  --radius: 20px;
+  --radius-inner: 14px;
+  --radius-field: 12px;
+  --radius-btn: 999px;
+  --radius-chip: 999px;
+  --radius-seg: 999px;
+  --radius-sheet: 26px;
+
+  --shadow: 0 1px 2px rgba(40, 46, 100, .06), 0 4px 12px -4px rgba(70, 80, 170, .18);
+  --card-bg: linear-gradient(165deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, .72));
+  --card-border: 1px solid rgba(255, 255, 255, .8);
+  --card-shadow: 0 1px 2px rgba(40, 46, 100, .06), 0 10px 26px -12px rgba(70, 80, 170, .28), inset 0 1px 0 rgba(255, 255, 255, .95);
+  --tile-bg: rgba(236, 238, 252, .7);
+  --field-bg: rgba(255, 255, 255, .92);
+  --field-border: rgba(62, 68, 112, .22);
+  --seg-bg: rgba(224, 228, 251, .6);
+  --seg-border: 1px solid rgba(62, 68, 112, .08);
+  --seg-active-bg: #ffffff;
+  --seg-active-shadow: 0 1px 2px rgba(40, 46, 100, .14), 0 6px 14px -4px rgba(101, 87, 238, .4);
+  --chip-bg: rgba(255, 255, 255, .7);
+  --chip-border: rgba(62, 68, 112, .2);
+  --chip-active-bg: linear-gradient(180deg, #3a3c47, #1f2027);
+  --chip-active-border: rgba(20, 21, 28, .9);
+  --chip-active-color: #ffffff;
+
+  --btn-primary-bg: linear-gradient(180deg, #3a3c47, #1f2027);
+  --btn-primary-color: #ffffff;
+  --btn-primary-border: rgba(20, 21, 28, .9);
+  --btn-primary-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 6px 14px -6px rgba(24, 26, 50, .55);
+  --btn-secondary-bg: rgba(255, 255, 255, .6);
+  --btn-secondary-border: rgba(62, 68, 112, .2);
+
+  --header-bg: rgba(244, 245, 252, .6);
+  --tabbar-bg: rgba(255, 255, 255, .62);
+  --chrome-border: 1px solid rgba(255, 255, 255, .7);
+  --chrome-filter: blur(24px) saturate(170%);
+  --chrome-shadow: 0 1px 2px rgba(40, 46, 100, .06), 0 14px 32px -14px rgba(70, 80, 170, .30);
+  --tab-color: #5c6073;
+  --tab-active-color: #1a1b21;
+  --tab-active-bg: linear-gradient(180deg, #ffffff, rgba(255, 255, 255, .8));
+  --tabbar-h: 60px;
+  --tabbar-offset: 10px;
+  --tabbar-inset: 12px;
+  --tabbar-radius: 24px;
+
+  --sheet-bg: #f6f7fc;
+  --sheet-shadow: 0 -16px 40px -12px rgba(30, 34, 80, .4);
+  --scrim: rgba(26, 27, 50, .3);
+  --toast-bg: #1a1b22;
+  --toast-color: #ffffff;
+  --toast-action: #b3acff;
+
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --display-weight: 600;
+  --display-tracking: -.02em;
+  --header-title-size: 21px;
+  --title-tracking: .1em;
+}
+
+/* floating capsule: a full hairline all round, lifted above the home indicator, centred */
+[data-style="lumen"] .tabbar {
+  bottom: calc(var(--tabbar-offset) + env(safe-area-inset-bottom));
+  padding-bottom: 0;
+  border: var(--chrome-border);
+  max-width: 536px; margin: 0 auto;
+}

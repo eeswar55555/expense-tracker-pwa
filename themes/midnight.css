@@ -1,0 +1,53 @@
+/* Midnight — true black for OLED phones (black pixels are off: easy on the eyes and battery).
+   Flat: no blur, no gradients, no shadows. Token overrides only. */
+[data-style="midnight"] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --card: #101114;
+  --card-2: #17181c;
+  --text: #f2f2f5;
+  --text-2: #b8bac4;
+  --muted: #8b8e99;
+  --border: #24262c;
+  --ink: #8ab4ff;
+  --on-ink: #000000;
+  --amber: #f6bd60;
+  --amber-soft: #2e2512;
+  --income: #5aa9e6;
+  --income-soft: #0f2233;
+  --expense: #ff7a66;
+  --expense-soft: #33150f;
+  --on-series: #000000;
+  --good: #5fd0a8;
+  --warn: #f0b44c;
+  --bad: #ff6b72;
+  --focus: #b5ceff;
+  --theme-color: #000000;
+
+  --shadow: none;
+  --card-border: 1px solid #1d1f24;
+  --card-shadow: none;
+  --tile-bg: #17181c;
+  --field-bg: #0a0b0d;
+  --field-border: #34373f;
+  --seg-bg: #0a0b0d;
+  --seg-border: 1px solid #24262c;
+  --seg-active-bg: #23252b;
+  --seg-active-shadow: none;
+  --chip-bg: #101114;
+  --chip-border: #2c2f36;
+
+  --header-bg: #000000;
+  --tabbar-bg: #000000;
+  --chrome-border: 1px solid #1d1f24;
+  --tab-color: #8b8e99;
+  --tab-active-color: #8ab4ff;
+  --tab-active-bg: rgba(138, 180, 255, .16);
+
+  --sheet-bg: #0d0e11;
+  --scrim: rgba(0, 0, 0, .6);
+  --toast-bg: #f2f2f5;
+  --toast-color: #000000;
+  --toast-action: #1a5fd0;
+}

@@ -13,6 +13,33 @@
 <link rel="stylesheet" href="css/history.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/setup.css">
+<link rel="stylesheet" href="css/appearance.css">
+<!-- Appearance (js/themes.js). Must stay AFTER every stylesheet link: it appends the chosen
+     style's file, which has to come last in the cascade. Runs before first paint; only that
+     one style file is fetched now (the rest load when the Settings picker opens). -->
+<script>
+(function () {
+  var d = document.documentElement, s = null, q = null, c = null;
+  try {
+    q = new URLSearchParams(location.search).get('style');
+    s = q || localStorage.getItem('etk.style');
+    c = localStorage.getItem('etk.styleColor');
+  } catch (e) {}
+  if (!s || !/^[a-z][a-z0-9-]{0,31}$/.test(s)) s = 'classic';
+  d.setAttribute('data-style', s);
+  if (s === 'classic') return;
+  var l = document.createElement('link');
+  l.rel = 'stylesheet'; l.href = 'themes/' + s + '.css'; l.id = 'style-' + s;
+  l.setAttribute('blocking', 'render');
+  l.onload = function () { l.dataset.state = 'loaded'; };
+  l.onerror = function () { l.dataset.state = 'error'; };
+  document.head.appendChild(l);
+  if (c && !q && /^[#a-zA-Z0-9(),.%\s]{3,40}$/.test(c)) {
+    var m = document.querySelectorAll('meta[name="theme-color"]');
+    for (var i = 0; i < m.length; i++) m[i].setAttribute('content', c);
+  }
+})();
+</script>
 </head>
 <body>
 
@@ -56,16 +83,24 @@
       <h2 id="settingsTitle">Settings</h2>
       <button class="icon-btn" type="button" data-close aria-label="Close">&#x2715;</button>
     </div>
-    <label for="webAppUrl">Apps Script Web App URL</label>
-    <input id="webAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
-    <label for="secret">Secret</label>
-    <input id="secret" type="password" placeholder="PHONE_API_SECRET from Script Properties" autocomplete="off">
-    <div class="hint">Both are stored only on this phone — never in the app's source code.</div>
-    <div class="hint" id="lastSyncInfo"></div>
-    <div class="btn-row">
-      <button class="btn btn-secondary" type="button" data-close>Cancel</button>
-      <button class="btn btn-primary" type="button" id="saveSettingsBtn">Save &amp; sync</button>
-    </div>
+    <section class="settings-sec" aria-labelledby="appearanceTitle">
+      <h3 class="settings-sec-title" id="appearanceTitle">Appearance</h3>
+      <div class="hint">Tap a style: it applies straight away and is saved on this phone. “Flat” styles are the fastest.</div>
+      <div class="style-strip" id="styleGallery" role="radiogroup" aria-labelledby="appearanceTitle"></div>
+    </section>
+    <section class="settings-sec" aria-labelledby="connectionTitle">
+      <h3 class="settings-sec-title" id="connectionTitle">Google Sheet connection</h3>
+      <label for="webAppUrl">Apps Script Web App URL</label>
+      <input id="webAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+      <label for="secret">Secret</label>
+      <input id="secret" type="password" placeholder="PHONE_API_SECRET from Script Properties" autocomplete="off">
+      <div class="hint">Both are stored only on this phone — never in the app's source code.</div>
+      <div class="hint" id="lastSyncInfo"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" type="button" data-close>Cancel</button>
+        <button class="btn btn-primary" type="button" id="saveSettingsBtn">Save &amp; sync</button>
+      </div>
+    </section>
     <!-- Deliberately tucked away: collapsed every time Settings opens, and the action behind it
          has two confirmations (js/revert.js). -->
     <details class="advanced" id="advancedBox">

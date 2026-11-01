@@ -1,0 +1,74 @@
+/* Teams — the dark "Classic" look of QuickNotes: Microsoft Teams charcoal with Teams purple.
+   Flat (no blur, no gradients). Token overrides only. */
+[data-style="teams"] {
+  color-scheme: dark;
+
+  --bg: #1b1a19;
+  --card: #292827;
+  --card-2: #323130;
+  --text: #f3f2f1;
+  --text-2: #b3b0ad;
+  --muted: #8a8886;
+  --border: #3b3a39;
+  --ink: #7f85f5;
+  --on-ink: #1b1a19;
+  --amber: #e0a526;
+  --amber-soft: #3a2f17;
+  --income: #6ca0ff;
+  --income-soft: #1f2b40;
+  --expense: #f08a6c;
+  --expense-soft: #3d2620;
+  --on-series: #1b1a19;
+  --good: #6bb700;
+  --warn: #e0a526;
+  --bad: #e66c78;
+  --focus: #a7abff;
+  --theme-color: #1b1a19;
+
+  --radius: 8px;
+  --radius-inner: 6px;
+  --radius-field: 4px;
+  --radius-btn: 4px;
+  --radius-chip: 5px;
+  --radius-seg: 6px;
+  --radius-sheet: 12px;
+
+  --shadow: 0 1.6px 3.6px rgba(0, 0, 0, .25), 0 .3px .9px rgba(0, 0, 0, .2);
+  --card-border: 1px solid #3b3a39;
+  --tile-bg: #323130;
+  --field-bg: #1f1e1d;
+  --field-border: #605e5c;
+  --seg-bg: #1f1e1d;
+  --seg-border: 1px solid #3b3a39;
+  --seg-active-bg: #3b3a39;
+  --seg-active-shadow: none;
+  --chip-bg: #292827;
+  --chip-border: #484644;
+  --chip-active-bg: #5b5fc7;
+  --chip-active-color: #ffffff;
+
+  --btn-primary-bg: #5b5fc7;
+  --btn-primary-color: #ffffff;
+
+  --header-bg: #252423;
+  --tabbar-bg: #252423;
+  --chrome-border: 1px solid #3b3a39;
+  --tab-color: #b3b0ad;
+  --tab-active-color: #a7abff;
+  --tab-indicator: #7f85f5;
+
+  --sheet-bg: #292827;
+  --scrim: rgba(0, 0, 0, .5);
+  --toast-bg: #f3f2f1;
+  --toast-color: #1b1a19;
+  --toast-action: #4f52b2;
+
+  --font: "Segoe UI", "Segoe UI Web (West European)", -apple-system, Roboto, system-ui, sans-serif;
+  --font-display: var(--font);
+  --display-tracking: 0px;
+  --title-size: 14px;
+  --title-weight: 600;
+  --title-tracking: 0px;
+  --title-transform: none;
+  --title-color: var(--text);
+}

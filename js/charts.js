@@ -159,10 +159,10 @@ export function yoyLineChart({ seriesThis, seriesLast, yearThis, yearLast, id })
 }
 
 /** Single-hue sequential heat shading for a magnitude value against a max.
- *  Uses the --heat-rgb token (defined per theme in dashboard.css, tied to the
- *  app's ink colour) so it stays theme-correct without any JS theme check. */
+ *  Mixes the --heat token (a colour, the style's ink by default) with transparent,
+ *  so it follows every style without any JS theme check. */
 export function heatStyle(value, max) {
   if (!(max > 0) || !(value > 0)) return { style: '', strong: false };
   const alpha = Math.min(0.9, 0.1 + 0.8 * (value / max));
-  return { style: `background-color: rgba(var(--heat-rgb), ${alpha.toFixed(2)})`, strong: alpha > 0.45 };
+  return { style: `background-color: color-mix(in srgb, var(--heat) ${Math.round(alpha * 100)}%, transparent)`, strong: alpha > 0.45 };
 }
